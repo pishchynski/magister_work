@@ -98,26 +98,74 @@ class BMAPStream:
 
 
 class BMMAPStream:
-    def __init__(self, matrD_0, matrD, q=0.8, n=3):
+    def __init__(self, matrD_0, matrD, q=0.8, n=3, t_num=2):
         """
         Constructor for BMMAPStream.
+        transition_matrices is a list where each row is transition matrices for one query type
+        matrD_l is list of D matrices for each type {0, 1, 2, ...}
+
         :param matrD_0: np.array or list with matrix D_0
         :param matrD: np.array or list with matrix that will be used to generate other matrices
         :param q: float coefficient for generating other matrices
         :param n: int number of matrices to be generated (excluding matrix D_0)
+        :param t_num: int number of queries types
         """
 
         self.q = q
-        self.transition_matrices_1 = []
-        self.transition_matrices_2 = []
+        self.transition_matrices = [[] for _ in range(t_num)]
         self.matrD_0 = np.array(matrD_0)
-        matrD_1 = 0.7 * np.array(matrD)
-        matrD_2 = 0.3 * np.array(matrD)
-        for k in range(1, n + 1):
-            self.transition_matrices_1.append(matrD_1 * (q ** (k - 1)) * (1 - q) / (1 - q ** 3))
-            self.transition_matrices_2.append(matrD_2 * (q ** (k - 1)) * (1 - q) / (1 - q ** 3))
+        matrD_t = [0.7 * np.array(matrD), 0.3 * np.array(matrD)]
+        for t in range(t_num):
+            for k in range(1, n + 1):
+                self.transition_matrices[t].append(matrD_t[t_num] * (q ** (k - 1)) * (1 - q) / (1 - q ** 3))
 
         matrD_1_ = np.zeros(self.matrD_0.shape)
+        for type_transition_matrices in self.transition_matrices:
+            for matr in type_transition_matrices:
+                matrD_1_ += matr
+
+        matr_hat_D_k = []
+        for t in range(t_num):
+            temp_matr = np.zeros(matrD_t[t].shape)
+            for matr in matrD_t[t]:
+                temp_matr += matr
+            matr_hat_D_k.append(temp_matr)
+
+        matr_cal_D_k = [[] for _ in  range(t_num)]
+        for t in range(t_num):
+            for k in range(n):
+                temp_matr = np.zeros(self.transition_matrices[t][k].shape)
+                for i in range(k, n):
+                    for over_t in filter(lambda x: x != t, range(t_num)):
+                        temp_matr += self.transition_matrices[over_t][i]
+                matr_cal_D_k[t].append(temp_matr)
+
+        theta = system_solve(matrD_1_)
+
+        self.avg_intensity_t = []
+
+        for t in range(t_num):
+            temp_matr = np.zeros()
+            for matr in self.transition_matrices[t]:
+                temp_matr += (k + 1) * matr
+            self.avg_intensity_t.append(r_multiply_e(np.dot(theta, temp_matr))[0])
+
+        self.avg_intensity = np.sum(self.avg_intensity_t)
+
+        self.batch_intensity_t = [r_multiply_e(np.dot(theta, matr_hat_D[0]))[0] for matr_hat_D in matr_hat_D_k]
+
+        dispersion_t = [(2 * r_multiply_e(
+                            np.dot(theta, np.invert(- matrD_0 - matr_cal_D[0]))[0])
+                         ) / batch_intensity - (1 / batch_intensity) ** 2
+                        for matr_cal_D, batch_intensity in zip(matr_cal_D_k, self.batch_intensity_t)]
+
+        self.c_cor = [(r_multiply_e(np.dot(np.dot(np.dot(theta,
+                                                         np.invert(- matrD_0 - matr_cal_D[0])),
+                                                  matr_hat_D[0]),
+                                           np.invert(- matrD_0 - matr_cal_D[0])))[0] - (1 / batch_intensity) ** 2) * (1 / dispersion)
+                      for matr_cal_D, matr_hat_D, batch_intensity, dispersion in zip(matr_cal_D_k, matr_hat_D_k, self.batch_intensity_t, dispersion_t)]
+
+
         
 
 
