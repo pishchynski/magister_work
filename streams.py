@@ -97,6 +97,30 @@ class BMAPStream:
             0]) - 1) / c_var2
 
 
+class BMMAPStream:
+    def __init__(self, matrD_0, matrD, q=0.8, n=3):
+        """
+        Constructor for BMMAPStream.
+        :param matrD_0: np.array or list with matrix D_0
+        :param matrD: np.array or list with matrix that will be used to generate other matrices
+        :param q: float coefficient for generating other matrices
+        :param n: int number of matrices to be generated (excluding matrix D_0)
+        """
+
+        self.q = q
+        self.transition_matrices_1 = []
+        self.transition_matrices_2 = []
+        self.matrD_0 = np.array(matrD_0)
+        matrD_1 = 0.7 * np.array(matrD)
+        matrD_2 = 0.3 * np.array(matrD)
+        for k in range(1, n + 1):
+            self.transition_matrices_1.append(matrD_1 * (q ** (k - 1)) * (1 - q) / (1 - q ** 3))
+            self.transition_matrices_2.append(matrD_2 * (q ** (k - 1)) * (1 - q) / (1 - q ** 3))
+
+        matrD_1_ = np.zeros(self.matrD_0.shape)
+        
+
+
 class PHStream:
     """
     PH stream class.
