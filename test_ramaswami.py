@@ -1,4 +1,4 @@
-from ramaswamy import *
+from ramaswami import *
 
 
 if __name__ == '__main__':
@@ -15,5 +15,5 @@ if __name__ == '__main__':
         [matr_S0, matr_S]
     ])
 
-    matr_L, matr_A, matr_P = calc_ramaswamy_matrices(matr_S, matr_tilde_S, vect_beta, N)
+    matr_L, matr_A, matr_P = calc_ramaswami_matrices(matr_S, matr_tilde_S, vect_beta, N)
     print()

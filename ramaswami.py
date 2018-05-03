@@ -89,7 +89,7 @@ def get_matr_UzNT(matr_T: np.ndarray, N: int):
     return matr_U
 
 
-def calc_ramaswamy_matrices(matr_S: np.ndarray, matr_tilde_S: np.ndarray, vect_beta: np.ndarray, N: int):
+def calc_ramaswami_matrices(matr_S: np.ndarray, matr_tilde_S: np.ndarray, vect_beta: np.ndarray, N: int):
     matr_U = []
     matr_L = []
     matr_A = []
