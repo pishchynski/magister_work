@@ -34,7 +34,7 @@ class BMAPStream:
         print('Correlation coefficient:', self.c_cor, file=file)
         print('=======END=======', '\n', file=file)
 
-    def __init__(self, matrD_0, matrD, q, n):
+    def __init__(self, matrD_0, matrD, q=0.8, n=3):
         """
         Constructor for BMAPStream.
         :param matrD_0: np.array or list with matrix D_0
@@ -98,6 +98,41 @@ class BMAPStream:
 
 
 class BMMAPStream:
+    """
+    BMMAP stream class.
+    Contains list of transition matrices for each type, stream average intensities, stream average intensity,
+    stream batches intensity and correlation coefficient.
+    """
+
+    def print_characteristics(self, matrix_name='D', file=sys.stdout):
+        """
+        Prints characteristics of BMMAP stream:
+        Transition matrices
+        Average intensities
+        Average intensity (sum of avg_intensities)
+        Average batch intensities
+        Correlation coefficient
+        :return: None
+        """
+
+        for t, type_transition_matrices in enumerate(self.transition_matrices):
+            for i, matr in enumerate(type_transition_matrices):
+                print(matrix_name + '^' + str(t + 1) + '_' + str(i), ':', file=file)
+                matr_print(matr, file=file)
+            print()
+
+        print('Average intensities:', file=file)
+        for t, intensity in enumerate(self.avg_intensity_t):
+            print('avg_intensity_' + str(t + 1) + ':', intensity, file=file)
+
+        print('Average intensity:', self.avg_intensity, file=file)
+        print('Average batch intensity:', file=file)
+        for t, intensity in enumerate(self.batch_intensity_t):
+            print('batch_intensity_' + str(t + 1) + ':', intensity, file=file)
+
+        print('Correlation coefficient:', self.c_cor, file=file)
+        print('=======END=======', '\n', file=file)
+
     def __init__(self, matrD_0, matrD, q=0.8, n=3, t_num=2):
         """
         Constructor for BMMAPStream.
@@ -117,21 +152,22 @@ class BMMAPStream:
         matrD_t = [0.7 * np.array(matrD), 0.3 * np.array(matrD)]
         for t in range(t_num):
             for k in range(1, n + 1):
-                self.transition_matrices[t].append(matrD_t[t_num] * (q ** (k - 1)) * (1 - q) / (1 - q ** 3))
+                self.transition_matrices[t].append(matrD_t[t] * (q ** (k - 1)) * (1 - q) / (1 - q ** 3))
 
-        matrD_1_ = np.zeros(self.matrD_0.shape)
+        matrD_1_ = copy.deepcopy(self.matrD_0)
         for type_transition_matrices in self.transition_matrices:
             for matr in type_transition_matrices:
                 matrD_1_ += matr
 
-        matr_hat_D_k = []
+        matr_hat_D_k = [[] for _ in range(t_num)]
         for t in range(t_num):
-            temp_matr = np.zeros(matrD_t[t].shape)
-            for matr in matrD_t[t]:
-                temp_matr += matr
-            matr_hat_D_k.append(temp_matr)
+            for k in range(n):
+                temp_matr = np.zeros(self.transition_matrices[t][k].shape)
+                for i in range(k, n):
+                    temp_matr += self.transition_matrices[t][i]
+                matr_hat_D_k[t].append(temp_matr)
 
-        matr_cal_D_k = [[] for _ in  range(t_num)]
+        matr_cal_D_k = [[] for _ in range(t_num)]
         for t in range(t_num):
             for k in range(n):
                 temp_matr = np.zeros(self.transition_matrices[t][k].shape)
@@ -145,8 +181,8 @@ class BMMAPStream:
         self.avg_intensity_t = []
 
         for t in range(t_num):
-            temp_matr = np.zeros()
-            for matr in self.transition_matrices[t]:
+            temp_matr = np.zeros(self.transition_matrices[t][0].shape)
+            for k, matr in enumerate(self.transition_matrices[t]):
                 temp_matr += (k + 1) * matr
             self.avg_intensity_t.append(r_multiply_e(np.dot(theta, temp_matr))[0])
 
@@ -155,18 +191,16 @@ class BMMAPStream:
         self.batch_intensity_t = [r_multiply_e(np.dot(theta, matr_hat_D[0]))[0] for matr_hat_D in matr_hat_D_k]
 
         dispersion_t = [(2 * r_multiply_e(
-                            np.dot(theta, np.invert(- matrD_0 - matr_cal_D[0]))[0])
-                         ) / batch_intensity - (1 / batch_intensity) ** 2
+                            np.dot(theta, la.inv(- matrD_0 - matr_cal_D[0])))[0])
+                        / batch_intensity - 1 / batch_intensity ** 2
                         for matr_cal_D, batch_intensity in zip(matr_cal_D_k, self.batch_intensity_t)]
 
-        self.c_cor = [(r_multiply_e(np.dot(np.dot(np.dot(theta,
-                                                         np.invert(- matrD_0 - matr_cal_D[0])),
+        self.c_cor = [((r_multiply_e(np.dot(np.dot(np.dot(theta,
+                                                         la.inv(- matrD_0 - matr_cal_D[0])),
                                                   matr_hat_D[0]),
-                                           np.invert(- matrD_0 - matr_cal_D[0])))[0] - (1 / batch_intensity) ** 2) * (1 / dispersion)
+                                           la.inv(- matrD_0 - matr_cal_D[0])))[0]) / batch_intensity - (1 / batch_intensity) ** 2) * (1 / dispersion)
                       for matr_cal_D, matr_hat_D, batch_intensity, dispersion in zip(matr_cal_D_k, matr_hat_D_k, self.batch_intensity_t, dispersion_t)]
 
-
-        
 
 
 class PHStream:
