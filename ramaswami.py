@@ -90,6 +90,15 @@ def get_matr_UzNT(matr_T: np.ndarray, N: int):
 
 
 def calc_ramaswami_matrices(matr_S: np.ndarray, matr_tilde_S: np.ndarray, vect_beta: np.ndarray, N: int):
+    """
+    Calculates Ramaswami matrices L_i, A_i and P_i
+
+    :param matr_S:
+    :param matr_tilde_S:
+    :param vect_beta:
+    :param N:
+    :return:
+    """
     matr_U = []
     matr_L = []
     matr_A = []
