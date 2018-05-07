@@ -210,6 +210,7 @@ class BMMAPStream:
             for matr in type_transition_matrices:
                 matrD_1_ += matr
 
+        self.matrD_1_ = matrD_1_
         matr_hat_D_k = [[] for _ in range(t_num)]
         for t in range(t_num):
             for k in range(n):
@@ -227,7 +228,7 @@ class BMMAPStream:
                         temp_matr += self.transition_matrices[over_t][i]
                 matr_cal_D_k[t].append(temp_matr)
 
-        theta = system_solve(matrD_1_)
+        theta = system_solve(self.matrD_1_)
 
         self.avg_intensity_t = []
 

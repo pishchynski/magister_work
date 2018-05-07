@@ -287,3 +287,14 @@ class TwoPrioritiesQueueingSystem:
             temp2 = np.vstack([zero_line2, temp2])
 
             matrQ_iiprev.append(temp1 + temp2)
+
+        return matrQ_iiprev
+
+    def _calc_Q_ii(self):
+        matrQ_ii = []
+        for i in range(2, self.N):
+            cur_matr = np.diag(-np.ones(i))
+            cur_matr += la.block_diag(*(kron(kronsum(self.queries_stream.matrD_1_,
+                                                     self.serv_stream.repres_matr),
+                                             np.eye(ncr(j + self.timer_stream.dim - 1,
+                                                        self.timer_stream.dim - 1))) for j in range(i + 1)))
