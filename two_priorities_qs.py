@@ -276,3 +276,14 @@ class TwoPrioritiesQueueingSystem:
             last_block1 += kron(self.p_hp * self.I_WM,
                                 self.ramatrL[self.N][self.N - i])
             blocks1.append(last_block1)
+
+            # Form transposed Quasi-Toeplitz matrix
+
+            temp1 = la.block_diag(*tuple(blocks0))
+            temp1 = np.vstack([temp1, np.zeros((temp1.shape[0], last_block1.shape[1]))])
+
+            temp2 = la.block_diag(*tuple(blocks1))
+            zero_line2 = np.zeros((blocks0[0].shape[0], temp2.shape[1]))
+            temp2 = np.vstack([zero_line2, temp2])
+
+            matrQ_iiprev.append(temp1 + temp2)
