@@ -1,6 +1,8 @@
 import gc
 import sys
 
+from matr_E import get_matr_E
+
 sys.path.append("../")
 from streams import *
 from test_data import *
@@ -28,6 +30,12 @@ class TwoPrioritiesQueueingSystem:
         self.timer_stream = PHStream(test_vect_gamma, test_matrGamma)
         self.matr_hat_Gamma = np.bmat([[np.zeros(1, self.timer_stream.dim), np.zeros(1, self.timer_stream.dim)],
                                        [self.timer_stream.repres_matr_0, self.timer_stream.repres_matr]])
+        self.I_WM = np.eye(self.queries_stream.dim_ * self.serv_stream.dim)
+        self.I_W = np.eye(self.queries_stream.dim_)
+        self.S_0xBeta = np.dot(self.serv_stream.repres_matr_0,
+                               self.serv_stream.repres_vect)
+
+        self.p_hp = 0.5
         self.n = 3
         self.N = 3
         self.ramatrL, self.ramatrA, self.ramatrP = self._calc_ramaswami_matrices(0, self.N)
@@ -225,3 +233,46 @@ class TwoPrioritiesQueueingSystem:
         return np.bmat([blocks0k,
                         blocks1k])
 
+    def _calc_Q_10(self):
+        block00 = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim,
+                            self.queries_stream.dim_))
+        block01 = kron(np.eye(self.queries_stream.dim_),
+                       np.dot(self.serv_stream.repres_matr_0,
+                              self.serv_stream.repres_vect))
+        block10 = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim * self.timer_stream.dim,
+                            self.queries_stream.dim_))
+        block11 = kron(kron(np.eye(self.queries_stream.dim_),
+                            np.dot(self.serv_stream.repres_matr_0,
+                                   self.serv_stream.repres_vect)),
+                       e_col(self.timer_stream.dim))
+        block11 += self.p_hp * kron(np.eye(self.queries_stream.dim_ * self.serv_stream.dim),
+                                    self.timer_stream.repres_matr_0)
+        return np.bmat([[block00, block01],
+                        [block10, block11]])
+
+    def _calc_Q_iiprev(self):
+        matrQ_iiprev = []
+        for i in range(2, self.N + 1):
+            blocks0 = [kron(self.I_W,
+                            np.dot(self.serv_stream.repres_matr_0,
+                                   self.serv_stream.repres_vect))]
+            blocks1 = [kron(self.p_hp * self.I_WM,
+                            self.ramatrL[self.N - i + 1][self.N - i])]
+            for j in range(1, i - 1):
+                blocks0.append(kron(kron(self.I_W,
+                                         self.S_0xBeta),
+                                    np.eye(ncr(j + self.timer_stream.dim - 1,
+                                               self.timer_stream.dim - 1))))
+                blocks1.append(kron(self.p_hp * self.I_WM,
+                                    self.ramatrL[self.N - i + j + 1][self.N - i]))
+
+            blocks0.append(kron(kron(self.I_W,
+                                     self.S_0xBeta),
+                                np.eye(ncr(i - 1 + self.timer_stream.dim - 1,
+                                           self.timer_stream.dim - 1))))
+            last_block1 = kron(kron(self.I_W, self.S_0xBeta),
+                               (1 / i) * get_matr_E(self.timer_stream.dim,
+                                                    i))
+            last_block1 += kron(self.p_hp * self.I_WM,
+                                self.ramatrL[self.N][self.N - i])
+            blocks1.append(last_block1)

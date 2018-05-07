@@ -16,4 +16,5 @@ if __name__ == '__main__':
     ])
 
     matr_L, matr_A, matr_P = calc_ramaswami_matrices(matr_S, matr_tilde_S, vect_beta, N)
+    matr_L1, matr_A1, matr_P1 = calc_ramaswami_matrices(matr_S, matr_tilde_S, vect_beta, N - 1)
     print()
