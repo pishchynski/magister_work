@@ -292,9 +292,101 @@ class TwoPrioritiesQueueingSystem:
 
     def _calc_Q_ii(self):
         matrQ_ii = []
-        for i in range(2, self.N):
-            cur_matr = np.diag(-np.ones(i))
-            cur_matr += la.block_diag(*(kron(kronsum(self.queries_stream.matrD_1_,
+        for i in range(1, self.N + 1):
+            cur_matr = la.block_diag(*(kron(kronsum(self.queries_stream.matrD_0 if i != self.N else self.queries_stream.matrD_1_,
                                                      self.serv_stream.repres_matr),
                                              np.eye(ncr(j + self.timer_stream.dim - 1,
                                                         self.timer_stream.dim - 1))) for j in range(i + 1)))
+            second_term_blocks = (kron(self.I_WM, self.ramatrA[self.N - i + j][j]) for j in range(i + 1))
+            second_term_shapes = [block.shape for block in second_term_blocks]
+            cur_matr += la.block_diag(*second_term_blocks)
+
+            udiag_matr = np.zeros(cur_matr.shape)
+            udiag_blocks = [kron(self.I_WM, self.ramatrL[self.N - i + j][self.N - i]) for j in range(1, i + 1)]
+
+            n_pos = 0
+            m_pos = 0
+            for udiag_block, shape in zip(udiag_blocks, second_term_shapes):
+                m_pos += shape[0]
+                copy_matrix_block(udiag_matr, udiag_block, m_pos, n_pos)
+                n_pos += shape[1]
+
+            cur_matr += (1 - self.p_hp) * udiag_matr
+
+            delta = np.diag([-np.sum(row) for row in cur_matr])
+
+            cur_matr += delta
+
+            matrQ_ii.append(cur_matr)
+
+        return matrQ_ii
+
+    def __get_ramatrP_mul(self, j, k):
+        ramatrP_mul = self.ramatrP[0][j]
+        for i in range(j + 1, j + k):
+            ramatrP_mul = np.dot(ramatrP_mul, self.ramatrP[0][i])
+
+        return ramatrP_mul
+
+    def _calc_matrQ_iik(self):
+        matrQ_iik = []
+        for i in range(1, self.N):
+            matrQ_ii_row = []
+            for k in range(1, self.N - i):
+                cur_matr = la.block_diag(*(kron(self.queries_stream.transition_matrices[0][k - 1],
+                                                np.eye(self.serv_stream.dim * ncr(j + self.timer_stream.dim - 1,
+                                                                                  self.timer_stream.dim - 1))))
+                                         for j in range(i + 1))
+                zero_matr = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim * np.sum(
+                                        [ncr(j + self.timer_stream.dim - 1,
+                                             self.timer_stream.dim - 1)
+                                         for j in range(i + 1)]),
+                                      self.queries_stream.dim_ * self.serv_stream.dim * np.sum(
+                                          [ncr(j + self.timer_stream.dim - 1,
+                                               self.timer_stream.dim - 1)
+                                           for j in range(i + 1, i + k + 1)])
+                                      ))
+                cur_matr = np.concatenate((cur_matr, zero_matr), axis=1)
+
+                temp_matr = la.block_diag(*(kron(kron(self.queries_stream.transition_matrices[0][k - 1],
+                                                      np.eye(self.serv_stream.dim * ncr(j + self.timer_stream.dim - 1,
+                                                                                        self.timer_stream.dim - 1))),
+                                                 self.__get_ramatrP_mul(j, k)))
+                                         for j in range(i + 1))
+
+                zero_matr = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim * np.sum(
+                                        [ncr(j + self.timer_stream.dim - 1,
+                                             self.timer_stream.dim - 1)
+                                         for j in range(i + 1)]),
+                                      self.queries_stream.dim_ * self.serv_stream.dim * np.sum(
+                                          [ncr(j + self.timer_stream.dim - 1,
+                                               self.timer_stream.dim - 1)
+                                           for j in range(k)])
+                                      ))
+                cur_matr += np.concatenate((zero_matr, temp_matr), axis=1)
+
+                matrQ_ii_row.append(cur_matr)
+
+            matrQ_iik.append(matrQ_ii_row)
+
+        return matrQ_iik
+
+    def _calc_matrQ_iN(self):
+        matrQ_iN = []
+        for i in range(1, self.N):
+            matrD_sum = self.queries_stream.transition_matrices[0][self.N - i - 1]
+            for k in range(self.N - i, self.n):
+                matrD_sum += self.queries_stream.transition_matrices[0][k]
+            cur_matr = la.block_diag(*(kron(matrD_sum, np.eye(self.serv_stream.dim * ncr(j + self.timer_stream.dim - 1,
+                                                              self.timer_stream.dim - 1)))
+                                       for j in range(i + 1)))
+
+            zero_matr = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim * np.sum(
+                [ncr(j + self.timer_stream.dim - 1,
+                     self.timer_stream.dim - 1)
+                 for j in range(i + 1)]),
+                                  self.queries_stream.dim_ * self.serv_stream.dim * np.sum(
+                                      [ncr(j + self.timer_stream.dim - 1,
+                                           self.timer_stream.dim - 1)
+                                       for j in range(i + 1, i + k + 1)])
+                                  ))

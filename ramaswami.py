@@ -149,7 +149,7 @@ def calc_ramaswami_matrices(matr_S: np.ndarray, matr_tilde_S: np.ndarray, vect_b
                 for m in range(1, N + 1):
                     matr_A[m] = matr_Az[m]
 
-        matr_A[0] = np.array([[0]])
+        matr_A = [np.array([[0]])] + matr_A
 
         print('Calculating P_1_i(beta)')
         for j in range(M - 1):

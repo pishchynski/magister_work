@@ -2,7 +2,7 @@ from ramaswami import *
 
 
 if __name__ == '__main__':
-    N = 5
+    N = 3
     matr_S = np.array([[-8, 5],
                    [1, -2]])
 
