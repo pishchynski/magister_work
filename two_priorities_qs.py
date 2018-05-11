@@ -374,11 +374,14 @@ class TwoPrioritiesQueueingSystem:
     def _calc_matrQ_iN(self):
         matrQ_iN = []
         for i in range(1, self.N):
-            matrD_sum = self.queries_stream.transition_matrices[0][self.N - i - 1]
+            matrD1_sum = self.queries_stream.transition_matrices[0][self.N - i - 1]
+            matrD2_sum = self.queries_stream.transition_matrices[1][self.N - i - 1]
             for k in range(self.N - i, self.n):
-                matrD_sum += self.queries_stream.transition_matrices[0][k]
-            cur_matr = la.block_diag(*(kron(matrD_sum, np.eye(self.serv_stream.dim * ncr(j + self.timer_stream.dim - 1,
-                                                              self.timer_stream.dim - 1)))
+                matrD1_sum += self.queries_stream.transition_matrices[0][k]
+                matrD2_sum += self.queries_stream.transition_matrices[0][k]
+
+            cur_matr = la.block_diag(*(kron(matrD1_sum, np.eye(self.serv_stream.dim * ncr(j + self.timer_stream.dim - 1,
+                                                                                          self.timer_stream.dim - 1)))
                                        for j in range(i + 1)))
 
             zero_matr = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim * np.sum(
@@ -390,3 +393,25 @@ class TwoPrioritiesQueueingSystem:
                                            self.timer_stream.dim - 1)
                                        for j in range(i + 1, i + k + 1)])
                                   ))
+            cur_matr = np.concatenate((cur_matr, zero_matr), axis=1)
+
+            temp_matr = la.block_diag(*(kron(kron(matrD2_sum, np.eye(self.serv_stream.dim * ncr(j + self.timer_stream.dim - 1,
+                                                                                                self.timer_stream.dim - 1))),
+                                             self.__get_ramatrP_mul(j, self.N - i))
+                                        for j in range(i + 1)))
+
+            zero_matr = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim * np.sum(
+                                      [ncr(j + self.timer_stream.dim - 1,
+                                         self.timer_stream.dim - 1)
+                                       for j in range(i + 1)]),
+                                  self.queries_stream.dim_ * self.serv_stream.dim * np.sum(
+                                      [ncr(j + self.timer_stream.dim - 1,
+                                           self.timer_stream.dim - 1)
+                                       for j in range(self.N - i)])
+                                  ))
+
+            cur_matr += np.concatenate((zero_matr, temp_matr), axis=1)
+
+            matrQ_iN.append(cur_matr)
+        return matrQ_iN
+
