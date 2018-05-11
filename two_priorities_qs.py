@@ -28,8 +28,9 @@ class TwoPrioritiesQueueingSystem:
         self.queries_stream = BMMAPStream(test_matrD_0, test_matrD)
         self.serv_stream = PHStream(test_vect_beta, test_matrS)
         self.timer_stream = PHStream(test_vect_gamma, test_matrGamma)
-        self.matr_hat_Gamma = np.bmat([[np.zeros(1, self.timer_stream.dim), np.zeros(1, self.timer_stream.dim)],
-                                       [self.timer_stream.repres_matr_0, self.timer_stream.repres_matr]])
+        self.matr_hat_Gamma = np.array(np.bmat([[np.zeros((1, self.timer_stream.repres_matr_0.shape[1])),
+                                        np.zeros((1, self.timer_stream.repres_matr.shape[1]))],
+                                       [self.timer_stream.repres_matr_0, self.timer_stream.repres_matr]]))
         self.I_WM = np.eye(self.queries_stream.dim_ * self.serv_stream.dim)
         self.I_W = np.eye(self.queries_stream.dim_)
         self.S_0xBeta = np.dot(self.serv_stream.repres_matr_0,
@@ -71,7 +72,7 @@ class TwoPrioritiesQueueingSystem:
 
     def _calc_Q_00(self):
         block00 = copy.deepcopy(self.queries_stream.matrD_0)
-        block01 = kron(self.queries_stream.transition_matrices[0][0] + self.queries_stream.transition_matrices[0][1],
+        block01 = kron(self.queries_stream.transition_matrices[0][1] + self.queries_stream.transition_matrices[1][1],
                        self.serv_stream.repres_vect)
         block10 = kron(np.eye(self.queries_stream.dim_),
                        self.serv_stream.repres_matr_0)
@@ -86,18 +87,18 @@ class TwoPrioritiesQueueingSystem:
     def _calc_Q_0k(self):
         matrQ_0k = [self._calc_Q_00()]
 
-        for k in range(1, self.N - 1):
-            block00 = np.zeros(self.queries_stream.transition_matrices[0][0].shape)
+        for k in range(1, self.N):
+            block00 = np.zeros(self.queries_stream.transition_matrices[0][1].shape)
             if k + 1 > self.n:
-                block00 = kron(np.zeros(self.queries_stream.transition_matrices[0][0].shape),
+                block00 = kron(np.zeros(self.queries_stream.transition_matrices[0][1].shape),
                                self.serv_stream.repres_vect)
             else:
                 block00 = kron(self.queries_stream.transition_matrices[0][k + 1],
                                self.serv_stream.repres_vect)
 
-            block10 = np.zeros(self.queries_stream.transition_matrices[0][0].shape)
+            block10 = np.zeros(self.queries_stream.transition_matrices[0][1].shape)
             if k > self.n:
-                block10 = kron(np.zeros(self.queries_stream.transition_matrices[0][0].shape),
+                block10 = kron(np.zeros(self.queries_stream.transition_matrices[0][1].shape),
                                np.eye(self.serv_stream.dim))
             else:
                 block10 = kron(self.queries_stream.transition_matrices[0][k],
@@ -106,7 +107,7 @@ class TwoPrioritiesQueueingSystem:
             blocks0k = [block00]
             blocks1k = [block10]
 
-            for j in range(1, k - 1):
+            for j in range(1, k):
                 temp_block = np.zeros((self.queries_stream.dim_,
                                         self.queries_stream.dim * self.serv_stream.dim * sum(
                                             [ncr(self.timer_stream.dim, j + self.timer_stream.dim - 1)
@@ -122,12 +123,12 @@ class TwoPrioritiesQueueingSystem:
                 blocks1k.append(temp_block)
 
             ramatrP_mul = copy.deepcopy(self.ramatrP[0][0])
-            for i in range(2, self.N):
+            for i in range(2, k):
                 ramatrP_mul = np.dot(ramatrP_mul, self.ramatrP[0][i])
 
             last_block0 = np.zeros((1, 1))
             if k + 1 > self.n:
-                last_block0 = kron(kron(np.zeros(self.queries_stream.transition_matrices[1][0].shape),
+                last_block0 = kron(kron(np.zeros(self.queries_stream.transition_matrices[1][1].shape),
                                                  self.serv_stream.repres_vect),
                                         ramatrP_mul)
             else:
@@ -137,7 +138,7 @@ class TwoPrioritiesQueueingSystem:
 
             last_block1 = np.zeros((1, 1))
             if k > self.n:
-                last_block1 = kron(kron(np.zeros(self.queries_stream.transition_matrices[1][0].shape),
+                last_block1 = kron(kron(np.zeros(self.queries_stream.transition_matrices[1][1].shape),
                                         np.eye(self.serv_stream.dim)),
                                    ramatrP_mul)
             else:
@@ -153,11 +154,12 @@ class TwoPrioritiesQueueingSystem:
 
             matrQ_0k.append(temp_matr)
             matrQ_0k.append(self._calc_Q_0N())
+        return matrQ_0k
 
     def _calc_Q_0N(self):
         block00 = np.zeros((1, 1))
         if self.N + 1 > self.n:
-            block00 = kron(np.zeros(self.queries_stream.transition_matrices[0][0].shape),
+            block00 = kron(np.zeros(self.queries_stream.transition_matrices[0][1].shape),
                            self.serv_stream.repres_vect)
         else:
             block00 = kron(self.queries_stream.transition_matrices[0][self.N + 1],
@@ -168,7 +170,7 @@ class TwoPrioritiesQueueingSystem:
 
         block10 = np.zeros((1, 1))
         if self.N > self.n:
-            block10 = kron(np.zeros(self.queries_stream.transition_matrices[0][0].shape),
+            block10 = kron(np.zeros(self.queries_stream.transition_matrices[0][1].shape),
                            self.serv_stream.repres_vect)
         else:
             block10 = kron(self.queries_stream.transition_matrices[0][self.N],
@@ -180,7 +182,7 @@ class TwoPrioritiesQueueingSystem:
         blocks0k = [block00]
         blocks1k = [block10]
 
-        for j in range(1, self.N - 1):
+        for j in range(1, self.N):
             temp_block = np.zeros((self.queries_stream.dim_,
                                    self.queries_stream.dim * self.serv_stream.dim * sum(
                                        [ncr(self.timer_stream.dim, j + self.timer_stream.dim - 1)
@@ -195,13 +197,13 @@ class TwoPrioritiesQueueingSystem:
                                    )))
             blocks1k.append(temp_block)
 
-        ramatrP_mul = copy.deepcopy(self.ramatrP[0][0])
-        for i in range(2, self.N):
-            ramatrP_mul = np.dot(ramatrP_mul, self.ramatrP[0][i])
+        ramatrP_mul = copy.deepcopy(self.ramatrP[self.N][0])
+        for i in range(1, self.N):
+            ramatrP_mul = np.dot(ramatrP_mul, self.ramatrP[self.N][i])
 
         last_block0 = np.zeros((1, 1))
         if self.N + 1 > self.n:
-            last_block0 = kron(kron(np.zeros(self.queries_stream.transition_matrices[1][0].shape),
+            last_block0 = kron(kron(np.zeros(self.queries_stream.transition_matrices[1][1].shape),
                                              self.serv_stream.repres_vect),
                                     ramatrP_mul)
         else:
@@ -215,7 +217,7 @@ class TwoPrioritiesQueueingSystem:
 
         last_block1 = np.zeros((1, 1))
         if self.N > self.n:
-            last_block1 = kron(kron(np.zeros(self.queries_stream.transition_matrices[1][0].shape),
+            last_block1 = kron(kron(np.zeros(self.queries_stream.transition_matrices[1][1].shape),
                                     np.eye(self.serv_stream.dim)),
                                ramatrP_mul)
         else:
@@ -280,7 +282,7 @@ class TwoPrioritiesQueueingSystem:
             # Form transposed Quasi-Toeplitz matrix
 
             temp1 = la.block_diag(*tuple(blocks0))
-            temp1 = np.vstack([temp1, np.zeros((temp1.shape[0], last_block1.shape[1]))])
+            temp1 = np.vstack([temp1, np.zeros((last_block1.shape[0], temp1.shape[1]))])
 
             temp2 = la.block_diag(*tuple(blocks1))
             zero_line2 = np.zeros((blocks0[0].shape[0], temp2.shape[1]))
@@ -297,7 +299,7 @@ class TwoPrioritiesQueueingSystem:
                                                      self.serv_stream.repres_matr),
                                              np.eye(ncr(j + self.timer_stream.dim - 1,
                                                         self.timer_stream.dim - 1))) for j in range(i + 1)))
-            second_term_blocks = (kron(self.I_WM, self.ramatrA[self.N - i + j][j]) for j in range(i + 1))
+            second_term_blocks = tuple([kron(self.I_WM, self.ramatrA[self.N - i + j][j]) for j in range(i + 1)])
             second_term_shapes = [block.shape for block in second_term_blocks]
             cur_matr += la.block_diag(*second_term_blocks)
 
@@ -322,7 +324,7 @@ class TwoPrioritiesQueueingSystem:
         return matrQ_ii
 
     def __get_ramatrP_mul(self, j, k):
-        ramatrP_mul = self.ramatrP[0][j]
+        ramatrP_mul = self.ramatrP[k][j]
         for i in range(j + 1, j + k):
             ramatrP_mul = np.dot(ramatrP_mul, self.ramatrP[0][i])
 
@@ -333,10 +335,10 @@ class TwoPrioritiesQueueingSystem:
         for i in range(1, self.N):
             matrQ_ii_row = []
             for k in range(1, self.N - i):
-                cur_matr = la.block_diag(*(kron(self.queries_stream.transition_matrices[0][k - 1],
+                cur_matr = la.block_diag(*(kron(self.queries_stream.transition_matrices[0][k],
                                                 np.eye(self.serv_stream.dim * ncr(j + self.timer_stream.dim - 1,
-                                                                                  self.timer_stream.dim - 1))))
-                                         for j in range(i + 1))
+                                                                                  self.timer_stream.dim - 1)))
+                                         for j in range(i + 1)))
                 zero_matr = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim * np.sum(
                                         [ncr(j + self.timer_stream.dim - 1,
                                              self.timer_stream.dim - 1)
@@ -348,11 +350,11 @@ class TwoPrioritiesQueueingSystem:
                                       ))
                 cur_matr = np.concatenate((cur_matr, zero_matr), axis=1)
 
-                temp_matr = la.block_diag(*(kron(kron(self.queries_stream.transition_matrices[0][k - 1],
+                temp_matr = la.block_diag(*(kron(kron(self.queries_stream.transition_matrices[0][k],
                                                       np.eye(self.serv_stream.dim * ncr(j + self.timer_stream.dim - 1,
                                                                                         self.timer_stream.dim - 1))),
-                                                 self.__get_ramatrP_mul(j, k)))
-                                         for j in range(i + 1))
+                                                 self.__get_ramatrP_mul(j, k))
+                                         for j in range(i + 1)))
 
                 zero_matr = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim * np.sum(
                                         [ncr(j + self.timer_stream.dim - 1,
@@ -374,11 +376,11 @@ class TwoPrioritiesQueueingSystem:
     def _calc_matrQ_iN(self):
         matrQ_iN = []
         for i in range(1, self.N):
-            matrD1_sum = self.queries_stream.transition_matrices[0][self.N - i - 1]
-            matrD2_sum = self.queries_stream.transition_matrices[1][self.N - i - 1]
-            for k in range(self.N - i, self.n):
+            matrD1_sum = self.queries_stream.transition_matrices[0][self.N - i]
+            matrD2_sum = self.queries_stream.transition_matrices[1][self.N - i]
+            for k in range(self.N - i + 1, self.n + 1):
                 matrD1_sum += self.queries_stream.transition_matrices[0][k]
-                matrD2_sum += self.queries_stream.transition_matrices[0][k]
+                matrD2_sum += self.queries_stream.transition_matrices[1][k]
 
             cur_matr = la.block_diag(*(kron(matrD1_sum, np.eye(self.serv_stream.dim * ncr(j + self.timer_stream.dim - 1,
                                                                                           self.timer_stream.dim - 1)))
@@ -415,3 +417,27 @@ class TwoPrioritiesQueueingSystem:
             matrQ_iN.append(cur_matr)
         return matrQ_iN
 
+    def calc_characteristics(self, verbose=False):
+        if verbose:
+            print('======= Input BMMAP Parameters =======')
+            self.queries_stream.print_characteristics('D')
+
+            print('======= PH service time parameters =======')
+            self.serv_stream.print_characteristics('S', 'beta')
+
+            print('======= PH timer parameters =======')
+            self.timer_stream.print_characteristics('Г', 'gamma')
+
+        matrQ_0k = self._calc_Q_0k()
+        matrQ_10 = self._calc_Q_10()
+        matrQ_iiprev = self._calc_Q_iiprev()
+        matrQ_ii = self._calc_Q_ii()
+        matrQ_iik = self._calc_matrQ_iik()
+        matrQ_iN = self._calc_matrQ_iN()
+
+        dd = [matrQ_0k, matrQ_10, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN]
+
+
+if __name__ == '__main__':
+    qs = TwoPrioritiesQueueingSystem()
+    qs.calc_characteristics(True)

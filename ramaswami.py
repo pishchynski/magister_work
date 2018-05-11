@@ -14,7 +14,7 @@ def get_matr_LzNT(matr_T: np.ndarray, N: int):
         matr_Lz = [0 for _ in range(N)]
         for z in range(N):
             if w == 0:
-                matr_L[z] = (N - z) * matr_T[r - 1][0] * np.identity(1)
+                matr_L[z] = (N - z) * np.dot(matr_T[r - 1][0], np.identity(1))
             else:
                 m_A = 0
                 n_A = 0
@@ -102,7 +102,7 @@ def calc_ramaswami_matrices(matr_S: np.ndarray, matr_tilde_S: np.ndarray, vect_b
     matr_U = []
     matr_L = []
     matr_A = []
-    matr_P1 = [0 for _ in range(N)]
+    matr_P1 = [0 for _ in range(N)] if N > 0 else [0]
     M = matr_S.shape[0]
     matr_tau = [0]
     if M != 1:
@@ -157,15 +157,15 @@ def calc_ramaswami_matrices(matr_S: np.ndarray, matr_tilde_S: np.ndarray, vect_b
             if j != 0:
                 a = np.array([[0 for _ in range(j + 1)]])
                 for k in range(M - j - 1, M):
-                    a[0][k - M + j + 1] = vect_beta[k]  # ???
+                    a[0][k - M + j + 1] = vect_beta[0][k]  # ???
             matr_Pz = [0 for _ in range(N)]
 
             for m in range(1, N):
                 if j == 0:
                     temp = np.array([[0 for _ in range(m + 2)] for _ in range(m + 1)])
                     for l in range(m + 1):
-                        temp[l][l + 1] = vect_beta[M - 1]
-                        temp[l][l] = vect_beta[M - 2]
+                        temp[l][l + 1] = vect_beta[0][M - 1]
+                        temp[l][l] = vect_beta[0][M - 2]
                     matr_P1[m] = temp
                 else:
                     m_A = 1
@@ -178,12 +178,12 @@ def calc_ramaswami_matrices(matr_S: np.ndarray, matr_tilde_S: np.ndarray, vect_b
 
                     m_pos = 1
                     n_pos = 1
-                    temp[0][0] = vect_beta[M - j - 2]
+                    temp[0][0] = vect_beta[0][M - j - 2]
                     copy_matrix_block(temp, a, 0, 1)
 
                     for l in range(1, m + 1):
                         shift = matr_P1[l].shape[0]
-                        copy_matrix_block(temp, vect_beta[M - j - 2] * np.identity(shift), m_pos, n_pos)
+                        copy_matrix_block(temp, vect_beta[0][M - j - 2] * np.identity(shift), m_pos, n_pos)
                         n_pos += shift
                         copy_matrix_block(temp, matr_P1[l], m_pos, n_pos)
                         m_pos += shift

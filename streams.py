@@ -165,8 +165,9 @@ class BMMAPStream:
 
         for t, type_transition_matrices in enumerate(self.transition_matrices):
             for i, matr in enumerate(type_transition_matrices):
-                print(matrix_name + '^' + str(t + 1) + '_' + str(i), ':', file=file)
-                matr_print(matr, file=file)
+                if matr is not None:
+                    print(matrix_name + '^' + str(t + 1) + '_' + str(i), ':', file=file)
+                    matr_print(matr, file=file)
             print()
 
         print('Average intensities:', file=file)
@@ -254,6 +255,9 @@ class BMMAPStream:
                                    1 / batch_intensity) ** 2) * (1 / dispersion)
                       for matr_cal_D, matr_hat_D, batch_intensity, dispersion in
                       zip(matr_cal_D_k, matr_hat_D_k, self.batch_intensity_t, dispersion_t)]
+
+        for t in range(t_num):
+            self.transition_matrices[t] = [None] + self.transition_matrices[t]
 
 
 class PHStream:

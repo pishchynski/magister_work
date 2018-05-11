@@ -6,7 +6,7 @@ if __name__ == '__main__':
     matr_S = np.array([[-8, 5],
                    [1, -2]])
 
-    vect_beta = np.array([0.98, 0.02])
+    vect_beta = np.array([[0.98, 0.02]])
 
     matr_S0 = r_multiply_e(-matr_S)
 
