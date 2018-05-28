@@ -124,7 +124,7 @@ class TwoPrioritiesQueueingSystem:
 
             ramatrP_mul = copy.deepcopy(self.ramatrP[0][0])
             for i in range(2, k):
-                ramatrP_mul = np.dot(ramatrP_mul, self.ramatrP[0][i])
+                ramatrP_mul = np.dot(ramatrP_mul, self.ramatrP[-1][i])
 
             last_block0 = np.zeros((1, 1))
             if k + 1 > self.n:
@@ -324,9 +324,9 @@ class TwoPrioritiesQueueingSystem:
         return matrQ_ii
 
     def __get_ramatrP_mul(self, j, k):
-        ramatrP_mul = self.ramatrP[k][j]
+        ramatrP_mul = self.ramatrP[-1][j]
         for i in range(j + 1, j + k):
-            ramatrP_mul = np.dot(ramatrP_mul, self.ramatrP[0][i])
+            ramatrP_mul = np.dot(ramatrP_mul, self.ramatrP[-1][i])
 
         return ramatrP_mul
 
@@ -350,11 +350,10 @@ class TwoPrioritiesQueueingSystem:
                                       ))
                 cur_matr = np.concatenate((cur_matr, zero_matr), axis=1)
 
-                temp_matr = la.block_diag(*(kron(kron(self.queries_stream.transition_matrices[0][k],
-                                                      np.eye(self.serv_stream.dim * ncr(j + self.timer_stream.dim - 1,
-                                                                                        self.timer_stream.dim - 1))),
+                temp_matr = la.block_diag(*(kron(kron(self.queries_stream.transition_matrices[1][k],
+                                                      np.eye(self.serv_stream.dim)),
                                                  self.__get_ramatrP_mul(j, k))
-                                         for j in range(i + 1)))
+                                          for j in range(i + 1)))
 
                 zero_matr = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim * np.sum(
                                         [ncr(j + self.timer_stream.dim - 1,
@@ -393,12 +392,11 @@ class TwoPrioritiesQueueingSystem:
                                   self.queries_stream.dim_ * self.serv_stream.dim * np.sum(
                                       [ncr(j + self.timer_stream.dim - 1,
                                            self.timer_stream.dim - 1)
-                                       for j in range(i + 1, i + k + 1)])
+                                       for j in range(i + 1, self.N + 1)])
                                   ))
             cur_matr = np.concatenate((cur_matr, zero_matr), axis=1)
 
-            temp_matr = la.block_diag(*(kron(kron(matrD2_sum, np.eye(self.serv_stream.dim * ncr(j + self.timer_stream.dim - 1,
-                                                                                                self.timer_stream.dim - 1))),
+            temp_matr = la.block_diag(*(kron(kron(matrD2_sum, np.eye(self.serv_stream.dim)),
                                              self.__get_ramatrP_mul(j, self.N - i))
                                         for j in range(i + 1)))
 
