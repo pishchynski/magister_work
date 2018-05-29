@@ -153,7 +153,8 @@ class TwoPrioritiesQueueingSystem:
                                           blocks1k]))
 
             matrQ_0k.append(temp_matr)
-            matrQ_0k.append(self._calc_Q_0N())
+
+        matrQ_0k.append(self._calc_Q_0N())
         return matrQ_0k
 
     def _calc_Q_0N(self):
