@@ -122,8 +122,8 @@ class TwoPrioritiesQueueingSystem:
                                        )))
                 blocks1k.append(temp_block)
 
-            ramatrP_mul = copy.deepcopy(self.ramatrP[0][0])
-            for i in range(2, k):
+            ramatrP_mul = copy.deepcopy(self.ramatrP[-1][0])
+            for i in range(1, k):
                 ramatrP_mul = np.dot(ramatrP_mul, self.ramatrP[-1][i])
 
             last_block0 = np.zeros((1, 1))
