@@ -149,8 +149,8 @@ class TwoPrioritiesQueueingSystem:
             blocks0k.append(last_block0)
             blocks1k.append(last_block1)
 
-            temp_matr = np.bmat([blocks0k,
-                                 blocks1k])
+            temp_matr = np.array(np.bmat([blocks0k,
+                                          blocks1k]))
 
             matrQ_0k.append(temp_matr)
             matrQ_0k.append(self._calc_Q_0N())
@@ -232,8 +232,8 @@ class TwoPrioritiesQueueingSystem:
         blocks0k.append(last_block0)
         blocks1k.append(last_block1)
 
-        return np.bmat([blocks0k,
-                        blocks1k])
+        return np.array(np.bmat([blocks0k,
+                                 blocks1k]))
 
     def _calc_Q_10(self):
         block00 = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim,
@@ -249,8 +249,8 @@ class TwoPrioritiesQueueingSystem:
                        e_col(self.timer_stream.dim))
         block11 += self.p_hp * kron(np.eye(self.queries_stream.dim_ * self.serv_stream.dim),
                                     self.timer_stream.repres_matr_0)
-        return np.bmat([[block00, block01],
-                        [block10, block11]])
+        return np.array(np.bmat([[block00, block01],
+                                 [block10, block11]]))
 
     def _calc_Q_iiprev(self):
         matrQ_iiprev = []
@@ -415,6 +415,20 @@ class TwoPrioritiesQueueingSystem:
             matrQ_iN.append(cur_matr)
         return matrQ_iN
 
+    def check_generator(self, matrQ_0k, matrQ_10, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN):
+        for i in range(len(matrQ_0k)):
+            temp = 0
+            for matr in matrQ_0k:
+                temp += np.sum(matr[i])
+            if temp > 10 ** (-5):
+                print("Line", i, "=", temp)
+
+        # for i in range(matrQ_10.shape[0]):
+        #     temp = 0
+        #     for matr in matrQ_iik[0]:
+
+
+
     def calc_characteristics(self, verbose=False):
         if verbose:
             print('======= Input BMMAP Parameters =======')
@@ -434,6 +448,7 @@ class TwoPrioritiesQueueingSystem:
         matrQ_iN = self._calc_matrQ_iN()
 
         dd = [matrQ_0k, matrQ_10, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN]
+        self.check_generator(matrQ_0k, matrQ_10, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN)
 
 
 if __name__ == '__main__':
