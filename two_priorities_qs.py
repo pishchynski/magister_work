@@ -254,7 +254,7 @@ class TwoPrioritiesQueueingSystem:
                                  [block10, block11]]))
 
     def _calc_Q_iiprev(self):
-        matrQ_iiprev = []
+        matrQ_iiprev = [None, self._calc_Q_10()]
         for i in range(2, self.N + 1):
             blocks0 = [kron(self.I_W,
                             np.dot(self.serv_stream.repres_matr_0,
@@ -294,7 +294,12 @@ class TwoPrioritiesQueueingSystem:
         return matrQ_iiprev
 
     def _calc_Q_ii(self):
-        matrQ_ii = []
+        """
+        Calculates matrices Q_{i,i} including Q_{N, N}
+
+        :return: list of matrices Q_ii
+        """
+        matrQ_ii = [None]
         for i in range(1, self.N + 1):
             cur_matr = la.block_diag(*(kron(kronsum(self.queries_stream.matrD_0 if i != self.N else self.queries_stream.matrD_1_,
                                                      self.serv_stream.repres_matr),
@@ -332,7 +337,7 @@ class TwoPrioritiesQueueingSystem:
         return ramatrP_mul
 
     def _calc_matrQ_iik(self):
-        matrQ_iik = []
+        matrQ_iik = [None]
         for i in range(1, self.N):
             matrQ_ii_row = []
             for k in range(1, self.N - i):
@@ -374,7 +379,7 @@ class TwoPrioritiesQueueingSystem:
         return matrQ_iik
 
     def _calc_matrQ_iN(self):
-        matrQ_iN = []
+        matrQ_iN = [None]
         for i in range(1, self.N):
             matrD1_sum = self.queries_stream.transition_matrices[0][self.N - i]
             matrD2_sum = self.queries_stream.transition_matrices[1][self.N - i]
@@ -416,13 +421,32 @@ class TwoPrioritiesQueueingSystem:
             matrQ_iN.append(cur_matr)
         return matrQ_iN
 
-    def check_generator(self, matrQ_0k, matrQ_10, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN):
+    def check_generator(self, matrQ_0k, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN):
+
+        # First block-row
         for i in range(len(matrQ_0k)):
             temp = 0
             for matr in matrQ_0k:
                 temp += np.sum(matr[i])
             if temp > 10 ** (-5):
                 print("Line", i, "=", temp)
+
+        # Other block-rows except Nth
+        for i in range(1, self.N):
+            # Iterating block-rows
+            temp = np.sum(matrQ_iiprev[i], axis=1)
+            temp += np.sum(matrQ_ii[i], axis=1)
+            for block in matrQ_iik[i]:
+                temp += np.sum(block, axis=1)
+            temp += np.sum(matrQ_iN[i])
+            delta = np.diag(-temp)
+
+            matrQ_ii[i] += delta
+
+        temp = np.sum(matrQ_iiprev[self.N], axis=1) + np.sum(matrQ_ii[self.N], axis=1)
+        delta = np.diag(-temp)
+        matrQ_ii[self.N] += delta
+
 
         # for i in range(matrQ_10.shape[0]):
         #     temp = 0
@@ -442,14 +466,14 @@ class TwoPrioritiesQueueingSystem:
             self.timer_stream.print_characteristics('Г', 'gamma')
 
         matrQ_0k = self._calc_Q_0k()
-        matrQ_10 = self._calc_Q_10()
         matrQ_iiprev = self._calc_Q_iiprev()
         matrQ_ii = self._calc_Q_ii()
         matrQ_iik = self._calc_matrQ_iik()
         matrQ_iN = self._calc_matrQ_iN()
 
-        dd = [matrQ_0k, matrQ_10, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN]
-        self.check_generator(matrQ_0k, matrQ_10, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN)
+        dd = [matrQ_0k, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN]
+        self.check_generator(matrQ_0k, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN)
+        print("generator checked")
 
 
 if __name__ == '__main__':
