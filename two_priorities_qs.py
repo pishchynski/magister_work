@@ -41,6 +41,8 @@ class TwoPrioritiesQueueingSystem:
         self.N = 3
         self.ramatrL, self.ramatrA, self.ramatrP = self._calc_ramaswami_matrices(0, self.N)
 
+        self.generator = None
+
     def set_BMMAP_queries_stream(self, matrD_0, matrD, q=0.8, n=3):
         self.queries_stream = BMAPStream(matrD_0, matrD, q, n)
         self.n = n
@@ -85,6 +87,11 @@ class TwoPrioritiesQueueingSystem:
         return np.array(matrQ_00)
 
     def _calc_Q_0k(self):
+        """
+        Calculates matrices Q_{0, k}, k = [0, N]
+
+        :return: list of np.arrays with Q_{0, k}
+        """
         matrQ_0k = [self._calc_Q_00()]
 
         for k in range(1, self.N):
@@ -379,6 +386,11 @@ class TwoPrioritiesQueueingSystem:
         return matrQ_iik
 
     def _calc_matrQ_iN(self):
+        """
+        Calculates matrices Q_{i, N}m i = [1, N - 1]
+
+        :return: list of np.arrays with Q_{i, N}
+        """
         matrQ_iN = [None]
         for i in range(1, self.N):
             matrD1_sum = self.queries_stream.transition_matrices[0][self.N - i]
@@ -421,8 +433,18 @@ class TwoPrioritiesQueueingSystem:
             matrQ_iN.append(cur_matr)
         return matrQ_iN
 
-    def check_generator(self, matrQ_0k, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN):
 
+    def check_generator(self, matrQ_0k, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN):
+        """
+        Checks first block-row for by-row sum equality to zero
+        Adds deltas to Q_{i,i} for generator to satisfy this condition
+
+        :param matrQ_0k:
+        :param matrQ_iiprev:
+        :param matrQ_ii:
+        :param matrQ_iik:
+        :param matrQ_iN:
+        """
         # First block-row
         for i in range(len(matrQ_0k)):
             temp = 0
@@ -443,16 +465,33 @@ class TwoPrioritiesQueueingSystem:
 
             matrQ_ii[i] += delta
 
+        # Nth block-row
         temp = np.sum(matrQ_iiprev[self.N], axis=1) + np.sum(matrQ_ii[self.N], axis=1)
         delta = np.diag(-temp)
         matrQ_ii[self.N] += delta
 
+    def finalize_generator(self, matrQ_0k, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN):
+        matrQ = [[None for _ in range(self.N + 1)] for _ in range(self.N + 1)]
+        matrQ[0] = matrQ_0k
+        for i in range(1, self.N + 1):
+            matrQ[i][i] = matrQ_ii[i]
+            matrQ[i][i - 1] = matrQ_iiprev[i]
+            if i < self.N:
+                for k, matr in enumerate(matrQ_iik[i]):
+                    matrQ[i][i + k + 1] = matr
 
-        # for i in range(matrQ_10.shape[0]):
-        #     temp = 0
-        #     for matr in matrQ_iik[0]:
+                matrQ[i][self.N] = matrQ_iN[i]
+        self.generator = matrQ
 
 
+    def _calc_matrG(self, matrQ_0k, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN):
+        matrG = []
+        for i in range(self.N - 1, -1, -1):
+            pass
+
+
+    def calc_stationary_probas(self, matrQ_0k, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN):
+        pass
 
     def calc_characteristics(self, verbose=False):
         if verbose:
@@ -473,6 +512,8 @@ class TwoPrioritiesQueueingSystem:
 
         dd = [matrQ_0k, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN]
         self.check_generator(matrQ_0k, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN)
+        self.finalize_generator(matrQ_0k, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN)
+
         print("generator checked")
 
 
