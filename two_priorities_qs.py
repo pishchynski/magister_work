@@ -484,11 +484,34 @@ class TwoPrioritiesQueueingSystem:
         self.generator = matrQ
 
 
-    def _calc_matrG(self, matrQ_0k, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN):
-        matrG = []
+    def _calc_matrG(self):
+        matrG = [None for _ in range(self.N)]
+        matrQ = self.generator
         for i in range(self.N - 1, -1, -1):
-            pass
+            tempG = -matrQ[i + 1][i + 1]
+            tempSum = None
+            for j in range(1, self.N - i - 1):
+                temp = matrQ[i + 1][i + 1 + j]
+                for k in range(i + j, i, -1):
+                    temp = np.dot(temp, matrG[k])
+                if not tempSum:
+                    tempSum = temp
+                else:
+                    tempSum = tempSum + temp
+            tempG = tempG - tempSum
+            tempG = la.inv(tempG)
+            tempG = np.dot(tempG, matrQ[i + 1][i])
+            matrG[i] = tempG
 
+        return matrG
+
+    def _calc_matrQover(self, matrG):
+        matrQ = self.generator
+        matrQover = [[None for _ in range(self.N)].append(matrQ[i][self.N]) for i in range(self.N + 1)]
+        for k in range(self.N - 1, -1, -1):
+            for i in range(k + 1):
+                matrQover[i][k] = matrQ[i][k] + np.dot(matrQover[i][k + 1], matrG[k])
+        return matrQover
 
     def calc_stationary_probas(self, matrQ_0k, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN):
         pass
