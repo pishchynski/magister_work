@@ -498,7 +498,8 @@ class TwoPrioritiesQueueingSystem:
                     tempSum = temp
                 else:
                     tempSum = tempSum + temp
-            tempG = tempG - tempSum
+            if not tempSum is None:
+                tempG = tempG - tempSum
             tempG = la.inv(tempG)
             tempG = np.dot(tempG, matrQ[i + 1][i])
             matrG[i] = tempG
@@ -507,14 +508,48 @@ class TwoPrioritiesQueueingSystem:
 
     def _calc_matrQover(self, matrG):
         matrQ = self.generator
-        matrQover = [[None for _ in range(self.N)].append(matrQ[i][self.N]) for i in range(self.N + 1)]
+        matrQover = [[None for _ in range(self.N)] + [matrQ[i][self.N]] for i in range(self.N + 1)]
         for k in range(self.N - 1, -1, -1):
             for i in range(k + 1):
                 matrQover[i][k] = matrQ[i][k] + np.dot(matrQover[i][k + 1], matrG[k])
         return matrQover
 
-    def calc_stationary_probas(self, matrQ_0k, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN):
-        pass
+    def _calc_matrF(self, matrQover):
+        matrF = [None]
+        for i in range(1, self.N + 1):
+            tempF = matrQover[0][i]
+            for j in range(1, i):
+                tempF = tempF + np.dot(matrF[j], matrQover[j][i])
+            tempF = np.dot(tempF, la.inv(-matrQover[i][i]))
+            matrF.append(tempF)
+        return matrF
+
+    def _calc_p0(self, matrF, matrQover):
+        matr_a = matrQover[0][0]
+        vect_eaR = e_col(matrF[1].shape[1])
+        for i in range(1, self.N + 1):
+            vect_e = e_col(matrF[i].shape[1])
+            vect_eaR += np.dot(matrF[i], vect_e)
+
+        for i in range(matr_a.shape[0]):
+            matr_a[i][0] = vect_eaR[i][0]
+
+        matr_b = np.zeros((matr_a.shape[0], 1))
+        matr_b[0][0] = 1.
+        matr_a = np.transpose(matr_a)
+        p0 = np.transpose(la.solve(matr_a, matr_b))
+
+        return p0
+
+    def calc_stationary_probas(self):
+        matrG = self._calc_matrG()
+        matrQover = self._calc_matrQover(matrG)
+        matrF = self._calc_matrF(matrQover)
+        p0 = self._calc_p0(matrF, matrQover)
+        stationary_probas = [p0]
+        for i in range(1, self.N + 1):
+            stationary_probas.append(np.dot(p0, matrF[i]))
+        return stationary_probas
 
     def calc_characteristics(self, verbose=False):
         if verbose:
@@ -538,6 +573,10 @@ class TwoPrioritiesQueueingSystem:
         self.finalize_generator(matrQ_0k, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN)
 
         print("generator checked")
+
+        stationary_probas = self.calc_stationary_probas()
+
+        print("stationary probas calculated")
 
 
 if __name__ == '__main__':
