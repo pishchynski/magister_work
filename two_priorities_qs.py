@@ -116,14 +116,14 @@ class TwoPrioritiesQueueingSystem:
 
             for j in range(1, k):
                 temp_block = np.zeros((self.queries_stream.dim_,
-                                        self.queries_stream.dim * self.serv_stream.dim * sum(
+                                        self.queries_stream.dim_ * self.serv_stream.dim * sum(
                                             [ncr(self.timer_stream.dim, j + self.timer_stream.dim - 1)
                                              for j in range(1, k)]
                                         )))
                 blocks0k.append(temp_block)
 
                 temp_block = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim,
-                                       self.queries_stream.dim * self.serv_stream.dim * sum(
+                                       self.queries_stream.dim_ * self.serv_stream.dim * sum(
                                            [ncr(self.timer_stream.dim, j + self.timer_stream.dim - 1)
                                             for j in range(1, k)]
                                        )))
@@ -192,14 +192,14 @@ class TwoPrioritiesQueueingSystem:
 
         for j in range(1, self.N):
             temp_block = np.zeros((self.queries_stream.dim_,
-                                   self.queries_stream.dim * self.serv_stream.dim * sum(
+                                   self.queries_stream.dim_ * self.serv_stream.dim * sum(
                                        [ncr(self.timer_stream.dim, j + self.timer_stream.dim - 1)
                                         for j in range(1, self.N)]
                                    )))
             blocks0k.append(temp_block)
 
             temp_block = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim,
-                                   self.queries_stream.dim * self.serv_stream.dim * sum(
+                                   self.queries_stream.dim_ * self.serv_stream.dim * sum(
                                        [ncr(self.timer_stream.dim, j + self.timer_stream.dim - 1)
                                         for j in range(1, self.N)]
                                    )))
