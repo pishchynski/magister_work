@@ -114,20 +114,21 @@ class TwoPrioritiesQueueingSystem:
             blocks0k = [block00]
             blocks1k = [block10]
 
-            for j in range(1, k):
-                temp_block = np.zeros((self.queries_stream.dim_,
-                                        self.queries_stream.dim_ * self.serv_stream.dim * sum(
-                                            [ncr(self.timer_stream.dim, j + self.timer_stream.dim - 1)
-                                             for j in range(1, k)]
-                                        )))
-                blocks0k.append(temp_block)
+            temp_block = np.zeros((self.queries_stream.dim_,
+                                    self.queries_stream.dim_ * self.serv_stream.dim * sum(
+                                        [ncr(j + self.timer_stream.dim - 1,
+                                             self.timer_stream.dim - 1)
+                                         for j in range(1, k)]
+                                    )))
+            blocks0k.append(temp_block)
 
-                temp_block = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim,
-                                       self.queries_stream.dim_ * self.serv_stream.dim * sum(
-                                           [ncr(self.timer_stream.dim, j + self.timer_stream.dim - 1)
-                                            for j in range(1, k)]
-                                       )))
-                blocks1k.append(temp_block)
+            temp_block = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim,
+                                   self.queries_stream.dim_ * self.serv_stream.dim * sum(
+                                       [ncr(j + self.timer_stream.dim - 1,
+                                            self.timer_stream.dim - 1)
+                                        for j in range(1, k)]
+                                   )))
+            blocks1k.append(temp_block)
 
             ramatrP_mul = copy.deepcopy(self.ramatrP[-1][0])
             for i in range(1, k):
@@ -190,20 +191,21 @@ class TwoPrioritiesQueueingSystem:
         blocks0k = [block00]
         blocks1k = [block10]
 
-        for j in range(1, self.N):
-            temp_block = np.zeros((self.queries_stream.dim_,
-                                   self.queries_stream.dim_ * self.serv_stream.dim * sum(
-                                       [ncr(self.timer_stream.dim, j + self.timer_stream.dim - 1)
-                                        for j in range(1, self.N)]
-                                   )))
-            blocks0k.append(temp_block)
+        temp_block = np.zeros((self.queries_stream.dim_,
+                               self.queries_stream.dim_ * self.serv_stream.dim * sum(
+                                   [ncr(j + self.timer_stream.dim - 1,
+                                        self.timer_stream.dim - 1)
+                                    for j in range(1, self.N)]
+                               )))
+        blocks0k.append(temp_block)
 
-            temp_block = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim,
-                                   self.queries_stream.dim_ * self.serv_stream.dim * sum(
-                                       [ncr(self.timer_stream.dim, j + self.timer_stream.dim - 1)
-                                        for j in range(1, self.N)]
-                                   )))
-            blocks1k.append(temp_block)
+        temp_block = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim,
+                               self.queries_stream.dim_ * self.serv_stream.dim * sum(
+                                   [ncr(j + self.timer_stream.dim - 1,
+                                        self.timer_stream.dim - 1)
+                                    for j in range(1, self.N)]
+                               )))
+        blocks1k.append(temp_block)
 
         ramatrP_mul = copy.deepcopy(self.ramatrP[self.N][0])
         for i in range(1, self.N):
@@ -526,7 +528,7 @@ class TwoPrioritiesQueueingSystem:
 
     def _calc_p0(self, matrF, matrQover):
         matr_a = matrQover[0][0]
-        vect_eaR = e_col(matrF[1].shape[1])
+        vect_eaR = e_col(matrF[1].shape[0])
         for i in range(1, self.N + 1):
             vect_e = e_col(matrF[i].shape[1])
             vect_eaR += np.dot(matrF[i], vect_e)
@@ -550,6 +552,9 @@ class TwoPrioritiesQueueingSystem:
         for i in range(1, self.N + 1):
             stationary_probas.append(np.dot(p0, matrF[i]))
         return stationary_probas
+
+    def check_probas(self, stationary_probas):
+        pass
 
     def calc_characteristics(self, verbose=False):
         if verbose:
@@ -575,6 +580,9 @@ class TwoPrioritiesQueueingSystem:
         print("generator checked")
 
         stationary_probas = self.calc_stationary_probas()
+        for num, proba in enumerate(stationary_probas):
+            print("p" + str(num) + ": " + str(proba))
+            print("sum: " + str(np.sum(proba)) + "\n")
 
         print("stationary probas calculated")
 
