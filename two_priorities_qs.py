@@ -1,4 +1,3 @@
-import gc
 import sys
 
 from matr_E import get_matr_E
@@ -619,7 +618,7 @@ class TwoPrioritiesQueueingSystem:
                       r_multiplier)[0][0]
 
     def calc_system_i_queries(self, stationary_probas, i):
-        pass
+        return np.sum([stationary_probas[i, j] for j in range(i + 1)])
 
     def calc_characteristics(self, verbose=False):
         stationary_probas = self.calc_stationary_probas()
