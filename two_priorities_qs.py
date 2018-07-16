@@ -604,6 +604,23 @@ class TwoPrioritiesQueueingSystem:
                                          [e_col(self.queries_stream.dim_ * self.serv_stream.dim)]]))
         return np.dot(stationary_probas[0], r_multiplier)[0][0]
 
+    def calc_system_i_queries_j_nonprior(self, stationary_probas, i, j):
+        mulW_M = self.queries_stream.dim_ * self.serv_stream.dim
+        block0_size = mulW_M * np.sum([ncr(l + self.timer_stream.dim - 1,
+                                           self.timer_stream.dim - 1) for l in range(j)])
+        block1_size = mulW_M * ncr(j + self.timer_stream.dim - 1,
+                                   self.timer_stream.dim - 1)
+        block2_size = mulW_M * np.sum([ncr(l + self.timer_stream.dim - 1,
+                                           self.timer_stream.dim - 1) for l in range(j + 1, i + 1)])
+        r_multiplier = np.array(np.bmat([[np.zeros(block0_size, 1)],
+                                         [e_col(block1_size)],
+                                         [np.zeros(block2_size, 1)]]))
+        return np.dot(stationary_probas[i],
+                      r_multiplier)[0][0]
+
+    def calc_system_i_queries(self, stationary_probas, i):
+        pass
+
     def calc_characteristics(self, verbose=False):
         stationary_probas = self.calc_stationary_probas()
         if self.check_probas(stationary_probas):
