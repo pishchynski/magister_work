@@ -605,15 +605,15 @@ class TwoPrioritiesQueueingSystem:
 
     def calc_system_i_queries_j_nonprior(self, stationary_probas, i, j):
         mulW_M = self.queries_stream.dim_ * self.serv_stream.dim
-        block0_size = mulW_M * np.sum([ncr(l + self.timer_stream.dim - 1,
-                                           self.timer_stream.dim - 1) for l in range(j)])
-        block1_size = mulW_M * ncr(j + self.timer_stream.dim - 1,
-                                   self.timer_stream.dim - 1)
-        block2_size = mulW_M * np.sum([ncr(l + self.timer_stream.dim - 1,
-                                           self.timer_stream.dim - 1) for l in range(j + 1, i + 1)])
-        r_multiplier = np.array(np.bmat([[np.zeros(block0_size, 1)],
+        block0_size = int(mulW_M * np.sum([ncr(l + self.timer_stream.dim - 1,
+                                           self.timer_stream.dim - 1) for l in range(j)]))
+        block1_size = int(mulW_M * ncr(j + self.timer_stream.dim - 1,
+                                   self.timer_stream.dim - 1))
+        block2_size = int(mulW_M * np.sum([ncr(l + self.timer_stream.dim - 1,
+                                           self.timer_stream.dim - 1) for l in range(j + 1, i + 1)]))
+        r_multiplier = np.array(np.bmat([[np.zeros((block0_size, 1))],
                                          [e_col(block1_size)],
-                                         [np.zeros(block2_size, 1)]]))
+                                         [np.zeros((block2_size, 1))]]))
         return np.dot(stationary_probas[i],
                       r_multiplier)[0][0]
 
@@ -629,15 +629,21 @@ class TwoPrioritiesQueueingSystem:
     def calc_characteristics(self, verbose=False):
         stationary_probas = self.calc_stationary_probas()
         if self.check_probas(stationary_probas):
-            print("stationary probas calculated")
+            print("stationary probas calculated\n")
         else:
-            print("stationary probas calculated with error!", file=sys.stderr)
+            print("stationary probas calculated with error!\n", file=sys.stderr)
 
         system_empty_proba = self.calc_system_empty_proba(stationary_probas)
         print("p_0 =", system_empty_proba)
 
         system_single_query_proba = self.calc_system_single_query_proba(stationary_probas)
         print("p_1 =", system_single_query_proba)
+
+        avg_queries_num = self.calc_avg_queries_num(stationary_probas)
+        print("L_buf =", avg_queries_num)
+
+        avg_nonprior_num = self.calc_avg_nonprior_queries_num(stationary_probas)
+        print("q_j =", avg_nonprior_num)
 
 
 if __name__ == '__main__':
