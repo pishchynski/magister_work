@@ -623,6 +623,9 @@ class TwoPrioritiesQueueingSystem:
     def calc_avg_queries_num(self, stationary_probas):
         return np.sum([i * self.calc_system_i_queries(stationary_probas, i) for i in range(1, self.N + 1)])
 
+    def calc_avg_nonprior_queries_num(self, stationary_probas):
+        return np.sum([np.sum([j * self.calc_system_i_queries_j_nonprior(stationary_probas, i, j) for j in range(1, i + 1)]) for i in range(1, self.N + 1)])
+
     def calc_characteristics(self, verbose=False):
         stationary_probas = self.calc_stationary_probas()
         if self.check_probas(stationary_probas):
