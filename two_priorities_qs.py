@@ -24,6 +24,7 @@ class TwoPrioritiesQueueingSystem:
 
         self._eps_G = 10 ** (-8)
         self._eps_F = 10 ** (-8)
+        self._eps_proba = 10 ** (-6)
 
         self.queries_stream = BMMAPStream(test_matrD_0, test_matrD)
         self.serv_stream = PHStream(test_vect_beta, test_matrS)
@@ -43,15 +44,45 @@ class TwoPrioritiesQueueingSystem:
 
         self.generator = None
 
-    def set_BMMAP_queries_stream(self, matrD_0, matrD, q=0.8, n=3):
+        self.recalculate_generator()
+
+    def set_BMMAP_queries_stream(self, matrD_0, matrD, q=0.8, n=3, recalculate_generator=False):
         self.queries_stream = BMAPStream(matrD_0, matrD, q, n)
         self.n = n
+        if recalculate_generator:
+            self.recalculate_generator()
 
-    def set_PH_serv_stream(self, vect, matr):
+    def set_PH_serv_stream(self, vect, matr, recalculate_generator=False):
         self.serv_stream = PHStream(vect, matr)
+        if recalculate_generator:
+            self.recalculate_generator()
 
-    def set_PH_timer_stream(self, vect, matr):
+    def set_PH_timer_stream(self, vect, matr, recalculate_generator=False):
         self.timer_stream = PHStream(vect, matr)
+        if recalculate_generator:
+            self.recalculate_generator()
+
+    def recalculate_generator(self, verbose=False):
+        if verbose:
+            print('======= Input BMMAP Parameters =======')
+            self.queries_stream.print_characteristics('D')
+
+            print('======= PH service time parameters =======')
+            self.serv_stream.print_characteristics('S', 'beta')
+
+            print('======= PH timer parameters =======')
+            self.timer_stream.print_characteristics('Г', 'gamma')
+
+        matrQ_0k = self._calc_Q_0k()
+        matrQ_iiprev = self._calc_Q_iiprev()
+        matrQ_ii = self._calc_Q_ii()
+        matrQ_iik = self._calc_matrQ_iik()
+        matrQ_iN = self._calc_matrQ_iN()
+
+        self.check_generator(matrQ_0k, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN)
+        self.finalize_generator(matrQ_0k, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN)
+
+        print("generator checked")
 
     def _calc_ramaswami_matrices(self, start=0, end=None):
         if not end:
@@ -554,37 +585,37 @@ class TwoPrioritiesQueueingSystem:
         return stationary_probas
 
     def check_probas(self, stationary_probas):
-        pass
-
-    def calc_characteristics(self, verbose=False):
-        if verbose:
-            print('======= Input BMMAP Parameters =======')
-            self.queries_stream.print_characteristics('D')
-
-            print('======= PH service time parameters =======')
-            self.serv_stream.print_characteristics('S', 'beta')
-
-            print('======= PH timer parameters =======')
-            self.timer_stream.print_characteristics('Г', 'gamma')
-
-        matrQ_0k = self._calc_Q_0k()
-        matrQ_iiprev = self._calc_Q_iiprev()
-        matrQ_ii = self._calc_Q_ii()
-        matrQ_iik = self._calc_matrQ_iik()
-        matrQ_iN = self._calc_matrQ_iN()
-
-        dd = [matrQ_0k, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN]
-        self.check_generator(matrQ_0k, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN)
-        self.finalize_generator(matrQ_0k, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN)
-
-        print("generator checked")
-
-        stationary_probas = self.calc_stationary_probas()
+        sum = 0.0
         for num, proba in enumerate(stationary_probas):
             print("p" + str(num) + ": " + str(proba))
-            print("sum: " + str(np.sum(proba)) + "\n")
+            temp_sum = np.sum(proba)
+            sum += temp_sum
+            print("sum: " + str(temp_sum) + "\n")
 
-        print("stationary probas calculated")
+        return 1 - self._eps_proba < sum < 1 + self._eps_proba
+
+    def calc_system_empty_proba(self, stationary_probas):
+        r_multiplier = np.array(np.bmat([[e_col(self.queries_stream.dim_)],
+                                         [np.zeros((self.queries_stream.dim_ * self.serv_stream.dim, 1))]]))
+        return np.dot(stationary_probas[0], r_multiplier)[0][0]
+
+    def calc_system_single_query_proba(self, stationary_probas):
+        r_multiplier = np.array(np.bmat([[np.zeros((self.queries_stream.dim_, 1))],
+                                         [e_col(self.queries_stream.dim_ * self.serv_stream.dim)]]))
+        return np.dot(stationary_probas[0], r_multiplier)[0][0]
+
+    def calc_characteristics(self, verbose=False):
+        stationary_probas = self.calc_stationary_probas()
+        if self.check_probas(stationary_probas):
+            print("stationary probas calculated")
+        else:
+            print("stationary probas calculated with error!", file=sys.stderr)
+
+        system_empty_proba = self.calc_system_empty_proba(stationary_probas)
+        print("p_0 =", system_empty_proba)
+
+        system_single_query_proba = self.calc_system_single_query_proba(stationary_probas)
+        print("p_1 =", system_single_query_proba)
 
 
 if __name__ == '__main__':
