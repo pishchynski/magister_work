@@ -603,7 +603,7 @@ class TwoPrioritiesQueueingSystem:
                                          [e_col(self.queries_stream.dim_ * self.serv_stream.dim)]]))
         return np.dot(stationary_probas[0], r_multiplier)[0][0]
 
-    def calc_system_i_queries_j_nonprior(self, stationary_probas, i, j):
+    def calc_buffer_i_queries_j_nonprior(self, stationary_probas, i, j):
         mulW_M = self.queries_stream.dim_ * self.serv_stream.dim
         block0_size = int(mulW_M * np.sum([ncr(l + self.timer_stream.dim - 1,
                                            self.timer_stream.dim - 1) for l in range(j)]))
@@ -617,14 +617,14 @@ class TwoPrioritiesQueueingSystem:
         return np.dot(stationary_probas[i],
                       r_multiplier)[0][0]
 
-    def calc_system_i_queries(self, stationary_probas, i):
-        return np.sum([self.calc_system_i_queries_j_nonprior(stationary_probas ,i, j) for j in range(i + 1)])
+    def calc_buffer_i_queries(self, stationary_probas, i):
+        return np.sum([self.calc_buffer_i_queries_j_nonprior(stationary_probas, i, j) for j in range(i + 1)])
 
-    def calc_avg_queries_num(self, stationary_probas):
-        return np.sum([i * self.calc_system_i_queries(stationary_probas, i) for i in range(1, self.N + 1)])
+    def calc_avg_buffer_queries_num(self, stationary_probas):
+        return np.sum([i * self.calc_buffer_i_queries(stationary_probas, i) for i in range(1, self.N + 1)])
 
-    def calc_avg_nonprior_queries_num(self, stationary_probas):
-        return np.sum([np.sum([j * self.calc_system_i_queries_j_nonprior(stationary_probas, i, j) for j in range(1, i + 1)]) for i in range(1, self.N + 1)])
+    def calc_avg_buffer_nonprior_queries_num(self, stationary_probas):
+        return np.sum([np.sum([j * self.calc_buffer_i_queries_j_nonprior(stationary_probas, i, j) for j in range(1, i + 1)]) for i in range(1, self.N + 1)])
 
     def calc_characteristics(self, verbose=False):
         stationary_probas = self.calc_stationary_probas()
@@ -639,11 +639,11 @@ class TwoPrioritiesQueueingSystem:
         system_single_query_proba = self.calc_system_single_query_proba(stationary_probas)
         print("p_1 =", system_single_query_proba)
 
-        avg_queries_num = self.calc_avg_queries_num(stationary_probas)
-        print("L_buf =", avg_queries_num)
+        avg_buffer_queries_num = self.calc_avg_buffer_queries_num(stationary_probas)
+        print("L_buf =", avg_buffer_queries_num)
 
-        avg_nonprior_num = self.calc_avg_nonprior_queries_num(stationary_probas)
-        print("q_j =", avg_nonprior_num)
+        avg_buffer_nonprior_num = self.calc_avg_buffer_nonprior_queries_num(stationary_probas)
+        print("q_j =", avg_buffer_nonprior_num)
 
 
 if __name__ == '__main__':
