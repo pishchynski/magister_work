@@ -39,7 +39,7 @@ class TwoPrioritiesQueueingSystem:
 
         self.p_hp = 0.5
         self.n = 3
-        self.N = 40
+        self.N = 20
         self.ramatrL, self.ramatrA, self.ramatrP = self._calc_ramaswami_matrices(0, self.N)
 
         self.generator = None
@@ -407,6 +407,12 @@ class TwoPrioritiesQueueingSystem:
 
         matrQ_iik = [None]
         for i in range(1, self.N):
+
+            cur_zero_matr = la.block_diag(*(kron(np.zeros(self.queries_stream.transition_matrices[0][1].shape),
+                                            np.eye(self.serv_stream.dim * ncr(j + self.timer_stream.dim - 1,
+                                                                              self.timer_stream.dim - 1)))
+                                       for j in range(i + 1)))
+
             matrQ_ii_row = []
             for k in range(1, self.N - i):
                 if k <= self.n:
@@ -430,10 +436,7 @@ class TwoPrioritiesQueueingSystem:
                                                      self.__get_ramatrP_mul(j, k))
                                                 for j in range(i + 1)))
                 else:
-                    cur_matr = la.block_diag(*(kron(np.zeros(self.queries_stream.transition_matrices[0][1].shape),
-                                                    np.eye(self.serv_stream.dim * ncr(j + self.timer_stream.dim - 1,
-                                                                                      self.timer_stream.dim - 1)))
-                                               for j in range(i + 1)))
+
 
                     zero_matr = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim * np.sum(
                         [ncr(j + self.timer_stream.dim - 1,
@@ -445,7 +448,7 @@ class TwoPrioritiesQueueingSystem:
                                                for j in range(i + 1, i + k + 1)])
                                           ))
 
-                    cur_matr = np.concatenate((cur_matr, zero_matr), axis=1)
+                    cur_matr = np.concatenate((cur_zero_matr, zero_matr), axis=1)
 
                     temp_matr = la.block_diag(*(kron(kron(np.zeros(self.queries_stream.transition_matrices[1][1].shape),
                                                           np.eye(self.serv_stream.dim)),
