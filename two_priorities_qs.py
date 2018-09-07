@@ -4,7 +4,7 @@ from matr_E import get_matr_E
 
 sys.path.append("../")
 from streams import *
-from test_data import *
+from test_data_poisson import *
 from ramaswami import calc_ramaswami_matrices
 
 np.set_printoptions(threshold=np.inf, suppress=True, formatter={'float': '{: 0.8f}'.format}, linewidth=75)
@@ -25,7 +25,7 @@ class TwoPrioritiesQueueingSystem:
         self._eps_F = 10 ** (-8)
         self._eps_proba = 10 ** (-6)
 
-        self.queries_stream = BMMAPStream(test_matrD_0, test_matrD)
+        self.queries_stream = BMMAPStream(test_matrD_0, test_matrD, test_q, test_n)
         self.serv_stream = PHStream(test_vect_beta, test_matrS)
         self.timer_stream = PHStream(test_vect_gamma, test_matrGamma)
         self.matr_hat_Gamma = np.array(np.bmat([[np.zeros((1, self.timer_stream.repres_matr_0.shape[1])),
@@ -38,8 +38,8 @@ class TwoPrioritiesQueueingSystem:
                                self.serv_stream.repres_vect)
 
         self.p_hp = 0.5
-        self.n = 3
-        self.N = 20
+        self.n = test_n
+        self.N = 3
         self.ramatrL, self.ramatrA, self.ramatrP = self._calc_ramaswami_matrices(0, self.N)
 
         self.generator = None
@@ -73,6 +73,8 @@ class TwoPrioritiesQueueingSystem:
             print('======= PH timer parameters =======')
             self.timer_stream.print_characteristics('Г', 'gamma')
 
+        print("Generator recalculating")
+
         matrQ_0k = self._calc_Q_0k()
         matrQ_iiprev = self._calc_Q_iiprev()
         matrQ_ii = self._calc_Q_ii()
@@ -82,7 +84,7 @@ class TwoPrioritiesQueueingSystem:
         self.check_generator(matrQ_0k, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN)
         self.finalize_generator(matrQ_0k, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN)
 
-        print("generator checked")
+        print("Generator recalculated")
 
     def _calc_ramaswami_matrices(self, start=0, end=None):
         if not end:
@@ -559,7 +561,7 @@ class TwoPrioritiesQueueingSystem:
             temp += np.sum(matrQ_ii[i], axis=1)
             for block in matrQ_iik[i]:
                 temp += np.sum(block, axis=1)
-            temp += np.sum(matrQ_iN[i])
+            temp += np.sum(matrQ_iN[i], axis=1)
             delta = np.diag(-temp)
 
             matrQ_ii[i] += delta
@@ -675,6 +677,8 @@ class TwoPrioritiesQueueingSystem:
             sum += temp_sum
             print("sum: " + str(temp_sum) + "\n")
 
+        print("all_sum:", str(sum))
+
         return 1 - self._eps_proba < sum < 1 + self._eps_proba
 
     def calc_system_empty_proba(self, stationary_probas):
@@ -760,4 +764,7 @@ class TwoPrioritiesQueueingSystem:
 
 if __name__ == '__main__':
     qs = TwoPrioritiesQueueingSystem()
+    qs.queries_stream.print_characteristics()
+    qs.serv_stream.print_characteristics(matrix_name='S', vector_name='beta')
+    qs.timer_stream.print_characteristics(matrix_name='Г', vector_name='gamma')
     qs.calc_characteristics(True)

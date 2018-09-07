@@ -198,6 +198,10 @@ def calc_ramaswami_matrices(matr_S: np.ndarray, matr_tilde_S: np.ndarray, vect_b
         print('Calculating L_i(N, matr_tilde_S)')
         matr_L = get_matr_LzNT(matr_tilde_S, N)
     else:
+        matr_A = [0 for _ in range(N + 1)]
+        matr_L = [0 for _ in range(N)]
+        matr_P1 = [0 for _ in range(N)]
+
         for n in range(N + 1):
             matr_A[n] = n * np.matmul(matr_S, np.identity(1))
             if n != N:

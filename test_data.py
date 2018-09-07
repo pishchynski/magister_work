@@ -6,6 +6,8 @@ test_matrD_0 = np.array([[-86, 0.01],
                         [0.02, -2.76]])
 test_matrD = np.array([[85, 0.99],
                       [0.2, 2.54]])
+test_q = 0.8
+test_n = 3
 
 # Server PH
 test_vect_beta = np.array([[1., 0.]])
