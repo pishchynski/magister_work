@@ -596,7 +596,7 @@ class TwoPrioritiesQueueingSystem:
         for i in range(self.N - 1, -1, -1):
             tempG = -matrQ[i + 1][i + 1]
             tempSum = None
-            for j in range(1, self.N - i - 1):
+            for j in range(1, self.N - i):
                 temp = matrQ[i + 1][i + 1 + j]
                 for k in range(i + j, i, -1):
                     temp = np.dot(temp, matrG[k])
