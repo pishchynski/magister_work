@@ -643,7 +643,7 @@ class TwoPrioritiesQueueingSystem:
         return matrF
 
     def _calc_p0(self, matrF, matrQover):
-        matr_a = matrQover[0][0]
+        matr_a = copy.deepcopy(matrQover[0][0])
         vect_eaR = e_col(matrF[1].shape[0])
         for i in range(1, self.N + 1):
             vect_e = e_col(matrF[i].shape[1])
