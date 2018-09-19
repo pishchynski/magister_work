@@ -486,8 +486,8 @@ class TwoPrioritiesQueueingSystem:
 
         matrQ_iN = [None]
         for i in range(1, self.N):
-            matrD1_sum = self.queries_stream.transition_matrices[0][-1]
-            matrD2_sum = self.queries_stream.transition_matrices[1][-1]
+            matrD1_sum = np.zeros(self.queries_stream.transition_matrices[0][-1].shape)
+            matrD2_sum = np.zeros(self.queries_stream.transition_matrices[1][-1].shape)
 
             if self.N - i <= self.n:
                 matrD1_sum = self.queries_stream.transition_matrices[0][self.N - i]
@@ -672,7 +672,7 @@ class TwoPrioritiesQueueingSystem:
     def check_probas(self, stationary_probas):
         sum = 0.0
         for num, proba in enumerate(stationary_probas):
-            print("p" + str(num) + ": " + str(proba))
+            print("p" + str(num) + ": " + to_latex_table(proba))
             temp_sum = np.sum(proba)
             sum += temp_sum
             print("sum: " + str(temp_sum) + "\n")

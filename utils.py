@@ -1,9 +1,9 @@
+import operator as op
 import sys
+from functools import reduce
 from sys import stderr
 from time import sleep
-from functools import reduce
 
-import operator as op
 import numpy as np
 import scipy.linalg as la
 
@@ -166,3 +166,12 @@ def ncr(n, r):
     numer = reduce(op.mul, range(n, n - r, -1), 1)
     denom = reduce(op.mul, range(1, r + 1), 1)
     return numer // denom
+
+def to_latex_table(elements):
+    latex_table = ''
+    for i, element in enumerate(elements[0]):
+        latex_table += str(element) + ', '
+        if (i + 1) % 6 == 0:
+            latex_table += '&\\\\\n'
+
+    return latex_table
