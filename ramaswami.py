@@ -16,14 +16,17 @@ def get_matr_LzNT(matr_T: np.ndarray, N: int):
             if w == 0:
                 matr_L[z] = (N - z) * np.dot(matr_T[r - 1][0], np.identity(1))
             else:
-                m_A = 0
-                n_A = 0
+                m_A = 0     # L_i^w rows num
+                n_A = 0     # L_I^w cols num
+
                 for k in range(N - 1, z - 1, -1):
                     m_A += matr_L[k].shape[0]
                     n_A += matr_L[k].shape[1]
 
-                m_A += matr_L[N - 1].shape[1]
-                temp = np.array([[0 for _ in range(n_A)] for _ in range(m_A)])
+                m_A += matr_L[N - 1].shape[1]   # added same num of rows as cols because matrix is square
+
+                temp = np.array([[0 for _ in range(n_A)] for _ in range(m_A)])  # elements of matrix to use positions
+
                 n_pos = 0
                 m_pos = 0
 
@@ -119,7 +122,7 @@ def calc_ramaswami_matrices(matr_S: np.ndarray, matr_tilde_S: np.ndarray, vect_b
                 if j == 0:
                     temp = np.array([[0 for _ in range(m + 1)] for _ in range(m + 1)])
                     for l in range(m):
-                        temp[l][l + 1] = (m - 1) * matr_S[M - 2][M - 1]
+                        temp[l][l + 1] = (m - l) * matr_S[M - 2][M - 1]
                         temp[l + 1][l] = (l + 1) * matr_S[M - 1][M - 2]
                     matr_A.append(temp)
                 else:

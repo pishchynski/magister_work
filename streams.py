@@ -1,6 +1,6 @@
 import copy
-from math import sqrt
 import sys
+from math import sqrt
 
 sys.path.append("../")
 from utils import *
@@ -199,9 +199,14 @@ class BMMAPStream:
         self.transition_matrices = [[] for _ in range(t_num)]
         self.matrD_0 = np.array(matrD_0)
         matrD_t = [0.7 * np.array(matrD), 0.3 * np.array(matrD)]
+        # matrD_t = [0.9999999999999999 * np.array(matrD), 0.0000000000000001 * np.array(matrD)]
+        # matrD_t = [0.0000000000000001 * np.array(matrD), 0.9999999999999999 * np.array(matrD)]
         for t in range(t_num):
-            for k in range(1, n + 1):
-                self.transition_matrices[t].append(matrD_t[t] * (q ** (k - 1)) * (1 - q) / (1 - q ** 3))
+            if n == 3:
+                for k in range(1, n + 1):
+                    self.transition_matrices[t].append(matrD_t[t] * (q ** (k - 1)) * (1 - q) / (1 - q ** 3))
+            elif n == 1:
+                self.transition_matrices[t].append(matrD_t[t])
 
         self.dim_ = self.transition_matrices[0][0].shape[0]
         self.dim = self.dim_ - 1

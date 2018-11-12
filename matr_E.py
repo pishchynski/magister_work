@@ -1,6 +1,9 @@
-import numpy as np
 from itertools import product
+
+import numpy as np
+
 from utils import ncr
+
 
 def get_matr_E(R: int, j: int):
     all_comb = list(reversed([np.array(x) for x in product([i for i in range(j + 1)], repeat=R)]))

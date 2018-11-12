@@ -170,7 +170,9 @@ def ncr(n, r):
 def to_latex_table(elements):
     latex_table = ''
     for i, element in enumerate(elements[0]):
-        latex_table += str(element) + ', '
+        if i % 6 == 0:
+            latex_table += '& '
+        latex_table += str(round(element, 8)) + ', '
         if (i + 1) % 6 == 0:
             latex_table += '&\\\\\n'
 

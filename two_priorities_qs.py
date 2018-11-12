@@ -4,7 +4,7 @@ from matr_E import get_matr_E
 
 sys.path.append("../")
 from streams import *
-from test_data_poisson import *
+from test_data import *
 from ramaswami import calc_ramaswami_matrices
 
 np.set_printoptions(threshold=np.inf, suppress=True, formatter={'float': '{: 0.8f}'.format}, linewidth=75)
@@ -21,8 +21,6 @@ class TwoPrioritiesQueueingSystem:
         self.name = name
         self._p_max_num = p_max_num
 
-        self._eps_G = 10 ** (-8)
-        self._eps_F = 10 ** (-8)
         self._eps_proba = 10 ** (-6)
 
         self.queries_stream = BMMAPStream(test_matrD_0, test_matrD, test_q, test_n)
@@ -37,9 +35,9 @@ class TwoPrioritiesQueueingSystem:
         self.S_0xBeta = np.dot(self.serv_stream.repres_matr_0,
                                self.serv_stream.repres_vect)
 
-        self.p_hp = 0.5
-        self.n = test_n
-        self.N = 3
+        self.p_hp = 10 ** (-5)  # probability of the query to leave system after the timer's up
+        self.n = test_n         # number of D_i matrices
+        self.N = 1              # buffer capacity
         self.ramatrL, self.ramatrA, self.ramatrP = self._calc_ramaswami_matrices(0, self.N)
 
         self.generator = None
@@ -63,6 +61,13 @@ class TwoPrioritiesQueueingSystem:
             self.recalculate_generator()
 
     def recalculate_generator(self, verbose=False):
+        """
+        Recalculates infinitesimal generator with streams set in the system's instance
+
+        :param verbose: whether to print streams' characteristics (default is False)
+        :return: None
+        """
+
         if verbose:
             print('======= Input BMMAP Parameters =======')
             self.queries_stream.print_characteristics('D')
@@ -87,7 +92,15 @@ class TwoPrioritiesQueueingSystem:
         print("Generator recalculated")
 
     def _calc_ramaswami_matrices(self, start=0, end=None):
-        if not end:
+        """
+        Calculates Ramaswami matrices L, A and P.
+
+        :param start:
+        :param end:
+        :return: tuple of matrices L, A, P
+        """
+
+        if end is None:
             end = self.N
 
         matrL = []
@@ -106,12 +119,18 @@ class TwoPrioritiesQueueingSystem:
         return matrL, matrA, matrP
 
     def _calc_Q_00(self):
+        """
+        Calculates Q_{0,0} block of the infinitesimal generator.
+
+        :return: numpy.array
+        """
+
         print("Calculating Q_00")
 
         block00 = copy.deepcopy(self.queries_stream.matrD_0)
         block01 = kron(self.queries_stream.transition_matrices[0][1] + self.queries_stream.transition_matrices[1][1],
                        self.serv_stream.repres_vect)
-        block10 = kron(np.eye(self.queries_stream.dim_),
+        block10 = kron(self.I_W,
                        self.serv_stream.repres_matr_0)
         block11 = kronsum(self.queries_stream.matrD_0,
                           self.serv_stream.repres_matr)
@@ -133,21 +152,21 @@ class TwoPrioritiesQueueingSystem:
         matrQ_0k = [self._calc_Q_00()]
 
         for k in range(1, self.N):
-            block00 = np.zeros(self.queries_stream.transition_matrices[0][1].shape)
+            # block00 = np.zeros(self.queries_stream.transition_matrices[0][1].shape)
             if k + 1 > self.n:
-                block00 = kron(np.zeros(self.queries_stream.transition_matrices[0][1].shape),
+                block00 = kron(np.zeros(self.queries_stream.transition_matrices[0][1].shape),   # this shape suits because all D_{i}^{1} have same shape
                                self.serv_stream.repres_vect)
             else:
                 block00 = kron(self.queries_stream.transition_matrices[0][k + 1],
                                self.serv_stream.repres_vect)
 
-            block10 = np.zeros(self.queries_stream.transition_matrices[0][1].shape)
+            # block10 = np.zeros(self.queries_stream.transition_matrices[0][1].shape)
             if k > self.n:
-                block10 = kron(np.zeros(self.queries_stream.transition_matrices[0][1].shape),
-                               np.eye(self.serv_stream.dim))
+                block10 = kron(np.zeros(self.queries_stream.transition_matrices[0][1].shape),   # this shape suits because all D_{i}^{1} have same shape
+                               self.I_M)
             else:
                 block10 = kron(self.queries_stream.transition_matrices[0][k],
-                               np.eye(self.serv_stream.dim))
+                               self.I_M)
 
             blocks0k = [block00]
             blocks1k = [block10]
@@ -168,11 +187,11 @@ class TwoPrioritiesQueueingSystem:
                                    )))
             blocks1k.append(temp_block)
 
-            ramatrP_mul = copy.deepcopy(self.ramatrP[-1][0])
+            ramatrP_mul = copy.deepcopy(self.ramatrP[-1][0])    # first index is '-1' because calc_ramaswami() returns all iterations of matrices
             for i in range(1, k):
                 ramatrP_mul = np.dot(ramatrP_mul, self.ramatrP[-1][i])
 
-            last_block0 = np.zeros((1, 1))
+            # last_block0 = np.zeros((1, 1))
             if k + 1 > self.n:
                 last_block0 = kron(kron(np.zeros(self.queries_stream.transition_matrices[1][1].shape),
                                         self.serv_stream.repres_vect),
@@ -182,14 +201,14 @@ class TwoPrioritiesQueueingSystem:
                                         self.serv_stream.repres_vect),
                                    ramatrP_mul)
 
-            last_block1 = np.zeros((1, 1))
+            # last_block1 = np.zeros((1, 1))
             if k > self.n:
                 last_block1 = kron(kron(np.zeros(self.queries_stream.transition_matrices[1][1].shape),
-                                        np.eye(self.serv_stream.dim)),
+                                        self.I_M),
                                    ramatrP_mul)
             else:
                 last_block1 = kron(kron(self.queries_stream.transition_matrices[1][k],
-                                        np.eye(self.serv_stream.dim)),
+                                        self.I_M),
                                    ramatrP_mul)
 
             blocks0k.append(last_block0)
@@ -207,9 +226,15 @@ class TwoPrioritiesQueueingSystem:
         return matrQ_0k
 
     def _calc_Q_0N(self):
+        """
+        Calculates Q_{0,N} block of the infinitesimal generator
+
+        :return:
+        """
+
         print("Calculating Q_0N")
 
-        block00 = np.zeros((1, 1))
+        # block00 = np.zeros((1, 1))
         if self.N + 1 > self.n:
             block00 = kron(np.zeros(self.queries_stream.transition_matrices[0][1].shape),
                            self.serv_stream.repres_vect)
@@ -220,16 +245,16 @@ class TwoPrioritiesQueueingSystem:
                 block00 += kron(self.queries_stream.transition_matrices[0][i],
                                 self.serv_stream.repres_vect)
 
-        block10 = np.zeros((1, 1))
+        # block10 = np.zeros((1, 1))
         if self.N > self.n:
             block10 = kron(np.zeros(self.queries_stream.transition_matrices[0][1].shape),
-                           np.eye(self.serv_stream.dim))
+                           self.I_M)
         else:
             block10 = kron(self.queries_stream.transition_matrices[0][self.N],
-                           np.eye(self.serv_stream.dim))
+                           self.I_M)
             for i in range(self.N + 1, self.n + 1):
                 block10 += kron(self.queries_stream.transition_matrices[0][i],
-                                np.eye(self.serv_stream.dim))
+                                self.I_M)
 
         blocks0k = [block00]
         blocks1k = [block10]
@@ -254,7 +279,7 @@ class TwoPrioritiesQueueingSystem:
         for i in range(1, self.N):
             ramatrP_mul = np.dot(ramatrP_mul, self.ramatrP[self.N][i])
 
-        last_block0 = np.zeros((1, 1))
+        # last_block0 = np.zeros((1, 1))
         if self.N + 1 > self.n:
             last_block0 = kron(kron(np.zeros(self.queries_stream.transition_matrices[1][1].shape),
                                     self.serv_stream.repres_vect),
@@ -268,18 +293,18 @@ class TwoPrioritiesQueueingSystem:
                                          self.serv_stream.repres_vect),
                                     ramatrP_mul)
 
-        last_block1 = np.zeros((1, 1))
+        # last_block1 = np.zeros((1, 1))
         if self.N > self.n:
             last_block1 = kron(kron(np.zeros(self.queries_stream.transition_matrices[1][1].shape),
-                                    np.eye(self.serv_stream.dim)),
+                                    self.I_M),
                                ramatrP_mul)
         else:
             last_block1 = kron(kron(self.queries_stream.transition_matrices[1][self.N],
-                                    np.eye(self.serv_stream.dim)),
+                                    self.I_M),
                                ramatrP_mul)
             for i in range(self.N + 1, self.n + 1):
                 last_block1 += kron(kron(self.queries_stream.transition_matrices[1][i],
-                                         np.eye(self.serv_stream.dim)),
+                                         self.I_M),
                                     ramatrP_mul)
 
         blocks0k.append(last_block0)
@@ -291,20 +316,24 @@ class TwoPrioritiesQueueingSystem:
                                  blocks1k]))
 
     def _calc_Q_10(self):
+        """
+        Calculates Q_{1,0} block of the infinitesimal generator
+
+        :return:
+        """
+
         print("Calculating Q_10")
 
         block00 = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim,
                             self.queries_stream.dim_))
-        block01 = kron(np.eye(self.queries_stream.dim_),
-                       np.dot(self.serv_stream.repres_matr_0,
-                              self.serv_stream.repres_vect))
+        block01 = kron(self.I_W,
+                       self.S_0xBeta)
         block10 = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim * self.timer_stream.dim,
                             self.queries_stream.dim_))
-        block11 = kron(kron(np.eye(self.queries_stream.dim_),
-                            np.dot(self.serv_stream.repres_matr_0,
-                                   self.serv_stream.repres_vect)),
+        block11 = kron(kron(self.I_W,
+                            self.S_0xBeta),
                        e_col(self.timer_stream.dim))
-        block11 += self.p_hp * kron(np.eye(self.queries_stream.dim_ * self.serv_stream.dim),
+        block11 += self.p_hp * kron(self.I_WM,
                                     self.timer_stream.repres_matr_0)
 
         print("Q_10 calculated")
@@ -313,13 +342,18 @@ class TwoPrioritiesQueueingSystem:
                                  [block10, block11]]))
 
     def _calc_Q_iiprev(self):
+        """
+        Calculates Q_{i,i-1} blocks of the infinitesimal generator
+
+        :return:
+        """
+
         print("Calculating Q_{i, i - 1}")
 
         matrQ_iiprev = [None, self._calc_Q_10()]
         for i in range(2, self.N + 1):
             blocks0 = [kron(self.I_W,
-                            np.dot(self.serv_stream.repres_matr_0,
-                                   self.serv_stream.repres_vect))]
+                            self.S_0xBeta)]
             blocks1 = [kron(self.p_hp * self.I_WM,
                             self.ramatrL[self.N - i + 1][self.N - i])]
             for j in range(1, i - 1):
@@ -405,15 +439,21 @@ class TwoPrioritiesQueueingSystem:
         return ramatrP_mul
 
     def _calc_matrQ_iik(self):
+        """
+        Calculates Q_{i,i+k} blocks of the infinitesimal generator
+
+        :return:
+        """
+
         print("Calculating Q_{i, i + k}")
 
         matrQ_iik = [None]
         for i in range(1, self.N):
 
             cur_zero_matr = la.block_diag(*(kron(np.zeros(self.queries_stream.transition_matrices[0][1].shape),
-                                            np.eye(self.serv_stream.dim * ncr(j + self.timer_stream.dim - 1,
-                                                                              self.timer_stream.dim - 1)))
-                                       for j in range(i + 1)))
+                                                 np.eye(self.serv_stream.dim * ncr(j + self.timer_stream.dim - 1,
+                                                                                   self.timer_stream.dim - 1)))
+                                            for j in range(i + 1)))
 
             matrQ_ii_row = []
             for k in range(1, self.N - i):
@@ -438,7 +478,6 @@ class TwoPrioritiesQueueingSystem:
                                                      self.__get_ramatrP_mul(j, k))
                                                 for j in range(i + 1)))
                 else:
-
 
                     zero_matr = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim * np.sum(
                         [ncr(j + self.timer_stream.dim - 1,
@@ -478,7 +517,7 @@ class TwoPrioritiesQueueingSystem:
 
     def _calc_matrQ_iN(self):
         """
-        Calculates matrices Q_{i, N}m i = [1, N - 1]
+        Calculates matrices Q_{i, N}, i = [1, N - 1]
 
         :return: list of np.arrays with Q_{i, N}
         """
@@ -551,7 +590,7 @@ class TwoPrioritiesQueueingSystem:
             temp = 0
             for matr in matrQ_0k:
                 temp += np.sum(matr[i])
-            if temp > 10 ** (-6):
+            if abs(temp) > 10 ** (-6):
                 print("Line", i, "=", temp)
 
         # Other block-rows except Nth
@@ -573,7 +612,7 @@ class TwoPrioritiesQueueingSystem:
         print("Generator checked")
 
     def finalize_generator(self, matrQ_0k, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN):
-        print("Finalizaing generator")
+        print("Finalizing generator")
 
         matrQ = [[None for _ in range(self.N + 1)] for _ in range(self.N + 1)]
         matrQ[0] = matrQ_0k
@@ -595,17 +634,17 @@ class TwoPrioritiesQueueingSystem:
         matrQ = self.generator
         for i in range(self.N - 1, -1, -1):
             tempG = -matrQ[i + 1][i + 1]
-            tempSum = None
+            temp_sum = None
             for j in range(1, self.N - i):
                 temp = matrQ[i + 1][i + 1 + j]
                 for k in range(i + j, i, -1):
                     temp = np.dot(temp, matrG[k])
-                if tempSum is None:
-                    tempSum = temp
+                if temp_sum is None:
+                    temp_sum = temp
                 else:
-                    tempSum = tempSum + temp
-            if not tempSum is None:
-                tempG = tempG - tempSum
+                    temp_sum = temp_sum + temp
+            if temp_sum is not None:
+                tempG = tempG - temp_sum
             tempG = la.inv(tempG)
             tempG = np.dot(tempG, matrQ[i + 1][i])
             matrG[i] = tempG
@@ -657,12 +696,35 @@ class TwoPrioritiesQueueingSystem:
         matr_a = np.transpose(matr_a)
         p0 = np.transpose(la.solve(matr_a, matr_b))
 
+        print('\nChecking p_0 * Qover_{0, 0}')
+        print(np.dot(p0, matrQover[0][0]), '\n')
+
+        print('\nChecking p_0 * matr_a')
+        print(np.dot(p0, np.transpose(matr_a)), '\n')
+
         return p0
 
-    def calc_stationary_probas(self):
+    def calc_stationary_probas(self, verbose=True):
         matrG = self._calc_matrG()
+
+        if verbose:
+            for ind, elem in enumerate(matrG):
+                print('G_' + str(ind), elem)
+
         matrQover = self._calc_matrQover(matrG)
+
+        if verbose:
+            for row_num, block_row in enumerate(matrQover):
+                print('Row', row_num)
+                for block_num, block in enumerate(block_row):
+                    print('Q_' + str(row_num) + ',' + str(block_num), block)
+
         matrF = self._calc_matrF(matrQover)
+
+        if verbose:
+            for ind, elem in enumerate(matrF):
+                print('F_' + str(ind), elem)
+
         p0 = self._calc_p0(matrF, matrQover)
         stationary_probas = [p0]
         for i in range(1, self.N + 1):
@@ -752,6 +814,9 @@ class TwoPrioritiesQueueingSystem:
         system_single_query_proba = self.calc_system_single_query_proba(stationary_probas)
         print("p_1 =", system_single_query_proba)
 
+        for i in range(1, self.N + 1):
+            print("p_buf_" + str(i), '=', self.calc_buffer_i_queries(stationary_probas, i))
+
         avg_buffer_queries_num = self.calc_avg_buffer_queries_num(stationary_probas)
         print("L_buf =", avg_buffer_queries_num)
 
@@ -761,10 +826,17 @@ class TwoPrioritiesQueueingSystem:
         p_loss = self.calc_query_lost_p(stationary_probas)
         print("P_loss =", p_loss)
 
+    def print_generator(self, as_latex=True):
+        for row_num, block_row in enumerate(self.generator):
+            print('Row', row_num)
+            for block_num, block in enumerate(block_row):
+                print(block_num, block)
+
 
 if __name__ == '__main__':
     qs = TwoPrioritiesQueueingSystem()
     qs.queries_stream.print_characteristics()
     qs.serv_stream.print_characteristics(matrix_name='S', vector_name='beta')
     qs.timer_stream.print_characteristics(matrix_name='Г', vector_name='gamma')
+    qs.print_generator()
     qs.calc_characteristics(True)
