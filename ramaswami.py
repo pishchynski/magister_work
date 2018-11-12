@@ -134,19 +134,31 @@ def calc_ramaswami_matrices(matr_S: np.ndarray, matr_tilde_S: np.ndarray, vect_b
                         n_A += matr_L[k].shape[1]
 
                     m_A += matr_U[N].shape[0]
-                    n_A += matr_U[N].shape[1]
+                    n_A += matr_U[N - m + 1].shape[1]
 
                     temp = np.array([[0 for _ in range(n_A)] for _ in range(m_A)])
-                    m_pos = 0
-                    n_pos = 0
-                    for l in range(m):
-                        u = 1.0 * (m - 1) / (N - 1)
-                        copy_matrix_block(temp, u * matr_U[N - 1], m_pos, n_pos)
-                        copy_matrix_block(temp, matr_L[N - l - 1], m_pos, n_pos)
 
-                        m_pos += matr_U[N - l].shape[0]
-                        n_pos += matr_L[N - l - 1].shape[1]
-                        copy_matrix_block(temp, matr_A[l + 1], m_pos, n_pos)
+                    m_pos_u = 0
+                    n_pos_u = matr_L[N - 1].shape[1]
+
+                    m_pos_l = matr_U[N].shape[0]
+                    n_pos_l = 0
+
+                    for l in range(m):
+                        copy_matrix_block(temp, matr_A[l + 1], m_pos_u, n_pos_l)
+
+                        u = 1.0 * (m - l) / (N - l)
+
+                        copy_matrix_block(temp, u * matr_U[N - l], m_pos_u, n_pos_u)
+
+                        m_pos_u += matr_U[N - l].shape[0]
+                        n_pos_u += matr_U[N - l].shape[1]
+
+                        copy_matrix_block(temp, matr_L[N - l - 1], m_pos_l, n_pos_l)
+
+                        m_pos_l += matr_L[N - l - 1].shape[0]
+                        n_pos_l += matr_L[N - l - 1].shape[1]
+
                     matr_Az[m] = temp
             if j != 0:
                 for m in range(1, N + 1):
@@ -160,7 +172,7 @@ def calc_ramaswami_matrices(matr_S: np.ndarray, matr_tilde_S: np.ndarray, vect_b
             if j != 0:
                 a = np.array([[0 for _ in range(j + 1)]])
                 for k in range(M - j - 1, M):
-                    a[0][k - M + j + 1] = vect_beta[0][k]  # ???
+                    a[0][k - M + j + 1] = vect_beta[0][k]
             matr_Pz = [0 for _ in range(N)]
 
             for m in range(1, N):
