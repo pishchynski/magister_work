@@ -16,4 +16,4 @@ test_matrS = np.array([[-10.]])
 
 # Timer PH
 test_vect_gamma = np.array([[1.]])
-test_matrGamma = np.array([[-10**(5)]])
+test_matrGamma = np.array([[-5]])

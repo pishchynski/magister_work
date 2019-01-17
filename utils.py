@@ -156,16 +156,19 @@ def linux_check_cpu_temperature(notify=True):
     except:
         return
 
+
 def copy_matrix_block(dest, src, m_pos, n_pos):
     m_shift = src.shape[0]
     n_shift = src.shape[1]
     dest[m_pos: m_pos + m_shift, :][:, n_pos: n_pos + n_shift] = src
+
 
 def ncr(n, r):
     r = min(r, n - r)
     numer = reduce(op.mul, range(n, n - r, -1), 1)
     denom = reduce(op.mul, range(1, r + 1), 1)
     return numer // denom
+
 
 def to_latex_table(elements):
     latex_table = ''

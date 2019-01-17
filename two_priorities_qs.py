@@ -4,7 +4,7 @@ from matr_E import get_matr_E
 
 sys.path.append("../")
 from streams import *
-from test_data import *
+from test_data_BMMAP3_PH_2 import *
 from ramaswami import calc_ramaswami_matrices
 
 np.set_printoptions(threshold=np.inf, suppress=True, formatter={'float': '{: 0.8f}'.format}, linewidth=75)
@@ -35,9 +35,9 @@ class TwoPrioritiesQueueingSystem:
         self.S_0xBeta = np.dot(self.serv_stream.repres_matr_0,
                                self.serv_stream.repres_vect)
 
-        self.p_hp = 10 ** (-5)  # probability of the query to leave system after the timer's up
+        self.p_hp = 0.4  # probability of the query to leave system after the timer's up
         self.n = test_n         # number of D_i matrices
-        self.N = 1              # buffer capacity
+        self.N = 3              # buffer capacity
         self.ramatrL, self.ramatrA, self.ramatrP = self._calc_ramaswami_matrices(0, self.N)
 
         self.generator = None
@@ -259,21 +259,22 @@ class TwoPrioritiesQueueingSystem:
         blocks0k = [block00]
         blocks1k = [block10]
 
-        temp_block = np.zeros((self.queries_stream.dim_,
-                               self.queries_stream.dim_ * self.serv_stream.dim * sum(
-                                   [ncr(j + self.timer_stream.dim - 1,
-                                        self.timer_stream.dim - 1)
-                                    for j in range(1, self.N)]
-                               )))
-        blocks0k.append(temp_block)
+        if self.N > 1:
+            temp_block = np.zeros((self.queries_stream.dim_,
+                                   self.queries_stream.dim_ * self.serv_stream.dim * sum(
+                                       [ncr(j + self.timer_stream.dim - 1,
+                                            self.timer_stream.dim - 1)
+                                        for j in range(1, self.N)]
+                                   )))
+            blocks0k.append(temp_block)
 
-        temp_block = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim,
-                               self.queries_stream.dim_ * self.serv_stream.dim * sum(
-                                   [ncr(j + self.timer_stream.dim - 1,
-                                        self.timer_stream.dim - 1)
-                                    for j in range(1, self.N)]
-                               )))
-        blocks1k.append(temp_block)
+            temp_block = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim,
+                                   self.queries_stream.dim_ * self.serv_stream.dim * sum(
+                                       [ncr(j + self.timer_stream.dim - 1,
+                                            self.timer_stream.dim - 1)
+                                        for j in range(1, self.N)]
+                                   )))
+            blocks1k.append(temp_block)
 
         ramatrP_mul = copy.deepcopy(self.ramatrP[self.N][0])
         for i in range(1, self.N):
@@ -420,10 +421,6 @@ class TwoPrioritiesQueueingSystem:
                 n_pos += shape[1]
 
             cur_matr += (1 - self.p_hp) * udiag_matr
-
-            delta = np.diag([-np.sum(row) for row in cur_matr])
-
-            cur_matr += delta
 
             matrQ_ii.append(cur_matr)
 
@@ -778,6 +775,40 @@ class TwoPrioritiesQueueingSystem:
             [np.sum([j * self.calc_buffer_i_queries_j_nonprior(stationary_probas, i, j) for j in range(1, i + 1)]) for i
              in range(1, self.N + 1)])
 
+    def calc_query_lost_p_alg(self, stationary_probas):
+        p_loss = np.dot(stationary_probas[0],
+                        np.array(np.bmat([[self.I_W],
+                                          [kron(self.I_W,
+                                                e_col(self.serv_stream.dim))]])))
+        r_sum = np.dot(stationary_probas[1],
+                       kron(kron(self.I_W,
+                                 e_col(self.serv_stream.dim)),
+                            e_col(np.sum([ncr(j + self.timer_stream.dim - 1,
+                                              self.timer_stream.dim - 1) for j in range(2)]))))
+        d_sum_1 = (1 - self.N) * self.queries_stream.transition_matrices[0]
+        for k in range(1, self.N - 1):
+            d_sum_1 += (k - self.N + 1) * self.queries_stream.transition_matrices[k]
+
+        r_sum = np.dot(r_sum, d_sum_1)
+
+        for i in range(2, self.N):
+            r_sum_temp = np.dot(stationary_probas[i],
+                            kron(kron(self.I_W,
+                                      e_col(self.serv_stream.dim)),
+                                 e_col(np.sum([ncr(j + self.timer_stream.dim - 1,
+                                                   self.timer_stream.dim - 1) for j in range(i + 1)]))))
+            d_sum = (i - self.N) * self.queries_stream.transition_matrices[0]
+            for k in range(1, self.N - 1):
+                d_sum += (k - self.N + i) * self.queries_stream.transition_matrices[k]
+            r_sum += np.dot(r_sum_temp, d_sum)
+
+
+        p_loss = p_loss + r_sum
+        p_loss = np.dot(p_loss, self.serv_stream.repres_matr_0)
+        p_loss = 1 - (1 / self.queries_stream.avg_intensity_t[0]) * p_loss[0][0]
+
+        return p_loss
+
     def calc_query_lost_p(self, stationary_probas):
         p_loss = np.dot(stationary_probas[0],
                         np.array(np.bmat([[np.zeros((self.queries_stream.dim_, self.serv_stream.dim))],
@@ -825,6 +856,9 @@ class TwoPrioritiesQueueingSystem:
 
         p_loss = self.calc_query_lost_p(stationary_probas)
         print("P_loss =", p_loss)
+
+        # p_loss_alg = self.calc_query_lost_p_alg(stationary_probas)
+        # print("P_loss_alg =", p_loss_alg)
 
     def print_generator(self, as_latex=True):
         for row_num, block_row in enumerate(self.generator):
