@@ -10,6 +10,9 @@ test_matrD = np.array([[5.372, 0.036],
 test_q = 0.8
 test_n = 3
 
+test_N = 5
+test_p_hp = 0.4
+
 # Server PH
 test_vect_beta = np.array([[1., 0.]])
 test_matrS = np.array([[-20., 20.],

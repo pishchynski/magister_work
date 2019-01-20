@@ -17,15 +17,14 @@ class TwoPrioritiesQueueingSystem:
     In Kendall designation (informal): BMMAP|PH|TimerPH|N - unchecked(?)
     """
 
-    def __init__(self, name='Default system', p_max_num=100):
+    def __init__(self, experiment_data, name='Default system', verbose=False):
         self.name = name
-        self._p_max_num = p_max_num
 
         self._eps_proba = 10 ** (-6)
 
-        self.queries_stream = BMMAPStream(test_matrD_0, test_matrD, test_q, test_n)
-        self.serv_stream = PHStream(test_vect_beta, test_matrS)
-        self.timer_stream = PHStream(test_vect_gamma, test_matrGamma)
+        self.queries_stream = BMMAPStream(experiment_data.test_matrD_0, experiment_data.test_matrD, experiment_data.test_q, experiment_data.test_n)
+        self.serv_stream = PHStream(experiment_data.test_vect_beta, experiment_data.test_matrS)
+        self.timer_stream = PHStream(experiment_data.test_vect_gamma, experiment_data.test_matrGamma)
         self.matr_hat_Gamma = np.array(np.bmat([[np.zeros((1, self.timer_stream.repres_matr_0.shape[1])),
                                                  np.zeros((1, self.timer_stream.repres_matr.shape[1]))],
                                                 [self.timer_stream.repres_matr_0, self.timer_stream.repres_matr]]))
@@ -35,9 +34,9 @@ class TwoPrioritiesQueueingSystem:
         self.S_0xBeta = np.dot(self.serv_stream.repres_matr_0,
                                self.serv_stream.repres_vect)
 
-        self.p_hp = 0.4  # probability of the query to leave system after the timer's up
-        self.n = test_n         # number of D_i matrices
-        self.N = 3              # buffer capacity
+        self.p_hp = experiment_data.p_hp  # probability of the query to leave system after the timer's up
+        self.n = experiment_data.test_n         # number of D_i matrices
+        self.N = experiment_data.test_N              # buffer capacity
         self.ramatrL, self.ramatrA, self.ramatrP = self._calc_ramaswami_matrices(0, self.N)
 
         self.generator = None
@@ -726,6 +725,12 @@ class TwoPrioritiesQueueingSystem:
         stationary_probas = [p0]
         for i in range(1, self.N + 1):
             stationary_probas.append(np.dot(p0, matrF[i]))
+
+        if self.check_probas(stationary_probas):
+            print("stationary probas calculated\n")
+        else:
+            print("stationary probas calculated with error!\n", file=sys.stderr)
+
         return stationary_probas
 
     def check_probas(self, stationary_probas):
@@ -833,29 +838,30 @@ class TwoPrioritiesQueueingSystem:
         return p_loss
 
     def calc_characteristics(self, verbose=False):
-        stationary_probas = self.calc_stationary_probas()
-        if self.check_probas(stationary_probas):
-            print("stationary probas calculated\n")
-        else:
-            print("stationary probas calculated with error!\n", file=sys.stderr)
+        stationary_probas = self.calc_stationary_probas(verbose)
 
         system_empty_proba = self.calc_system_empty_proba(stationary_probas)
-        print("p_0 =", system_empty_proba)
+        if verbose:
+            print("p_0 =", system_empty_proba)
 
         system_single_query_proba = self.calc_system_single_query_proba(stationary_probas)
-        print("p_1 =", system_single_query_proba)
+        if verbose:
+            print("p_1 =", system_single_query_proba)
 
-        for i in range(1, self.N + 1):
-            print("p_buf_" + str(i), '=', self.calc_buffer_i_queries(stationary_probas, i))
+            for i in range(1, self.N + 1):
+                print("p_buf_" + str(i), '=', self.calc_buffer_i_queries(stationary_probas, i))
 
         avg_buffer_queries_num = self.calc_avg_buffer_queries_num(stationary_probas)
-        print("L_buf =", avg_buffer_queries_num)
+        if verbose:
+            print("L_buf =", avg_buffer_queries_num)
 
         avg_buffer_nonprior_num = self.calc_avg_buffer_nonprior_queries_num(stationary_probas)
-        print("q_j =", avg_buffer_nonprior_num)
+        if verbose:
+            print("q_j =", avg_buffer_nonprior_num)
 
         p_loss = self.calc_query_lost_p(stationary_probas)
-        print("P_loss =", p_loss)
+        if verbose:
+            print("P_loss =", p_loss)
 
         # p_loss_alg = self.calc_query_lost_p_alg(stationary_probas)
         # print("P_loss_alg =", p_loss_alg)
