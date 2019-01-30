@@ -38,8 +38,8 @@ class MAPStream:
         :param transition_matr1: np.array or list with transition matrix 1
         """
 
-        self.transition_matrices = [np.array(transition_matr0)]
-        self.transition_matrices.append(np.array(transition_matr1))
+        self.transition_matrices = [np.array(transition_matr0, dtype=float)]
+        self.transition_matrices.append(np.array(transition_matr1, dtype=float))
         self.transition_matrices_sum = self.transition_matrices[0] + self.transition_matrices[1]
         gamma = system_solve(self.transition_matrices_sum)
         self.avg_intensity = r_multiply_e(np.dot(gamma, self.transition_matrices[1]))[0]
@@ -92,8 +92,8 @@ class BMAPStream:
         """
 
         self.q = q
-        self.transition_matrices = [np.array(matrD_0)]
-        self.matrD = np.array(matrD)
+        self.transition_matrices = [np.array(matrD_0, dtype=float)]
+        self.matrD = np.array(matrD, dtype=float)
         for k in range(1, n + 1):
             self.transition_matrices.append(self.matrD * (q ** (k - 1)) * (1 - q) / (1 - q ** 3))
 
@@ -101,7 +101,7 @@ class BMAPStream:
         for matr in self.transition_matrices:
             matrD_1_ += matr
         theta = system_solve(matrD_1_)
-        matrdD_1_ = np.array(copy.deepcopy(self.transition_matrices[1]))
+        matrdD_1_ = np.array(copy.deepcopy(self.transition_matrices[1]), dtype=float)
         for i in range(2, n + 1):
             matrdD_1_ += self.transition_matrices[i] * i
         self.avg_intensity = r_multiply_e(np.dot(theta, matrdD_1_))[0]
@@ -122,12 +122,12 @@ class BMAPStream:
         Sets BMAP transition_matrices
         :param transition_matrices: iterable of np.arrays
         """
-        self.transition_matrices = np.array(transition_matrices)
+        self.transition_matrices = np.array(transition_matrices, dtype=float)
         matrD_1_ = np.zeros(self.transition_matrices[0].shape)
         for matr in self.transition_matrices:
             matrD_1_ += matr
         theta = system_solve(matrD_1_)
-        matrdD_1_ = np.array(copy.deepcopy(self.transition_matrices[1]))
+        matrdD_1_ = np.array(copy.deepcopy(self.transition_matrices[1]), dtype=float)
         for i in range(2, len(self.transition_matrices)):
             matrdD_1_ += self.transition_matrices[i] * i
         self.avg_intensity = r_multiply_e(np.dot(theta, matrdD_1_))[0]
@@ -197,9 +197,9 @@ class BMMAPStream:
 
         self.q = q
         self.transition_matrices = [[] for _ in range(t_num)]
-        self.matrD_0 = np.array(matrD_0)
+        self.matrD_0 = np.array(matrD_0, dtype=float)
         # matrD_t = [0.7 * np.array(matrD), 0.3 * np.array(matrD)]
-        matrD_t = [0.99999999999 * np.array(matrD), 0.00000000001 * np.array(matrD)]
+        matrD_t = [0.99999999999 * np.array(matrD, dtype=float), 0.00000000001 * np.array(matrD, dtype=float)]
         # matrD_t = [0.0000000000000001 * np.array(matrD), 0.9999999999999999 * np.array(matrD)]
         for t in range(t_num):
             if n == 3:
@@ -300,8 +300,8 @@ class PHStream:
         :param repres_matr: np.array or list with representation matrix
         """
 
-        self.repres_vect = np.array(repres_vect)
-        self.repres_matr = np.array(repres_matr)
+        self.repres_vect = np.array(repres_vect, dtype=float)
+        self.repres_matr = np.array(repres_matr, dtype=float)
         self.repres_matr_0 = -r_multiply_e(self.repres_matr)
         self.avg_intensity = -la.inv(r_multiply_e(np.dot(self.repres_vect,
                                                          la.inv(self.repres_matr))))[0, 0]

@@ -29,7 +29,8 @@ class TwoPrioritiesQueueingSystem:
         self.matr_hat_Gamma = np.array(np.bmat([[np.zeros((1, self.timer_stream.repres_matr_0.shape[1])),
                                                  np.zeros((1, self.timer_stream.repres_matr.shape[1]))],
                                                 [self.timer_stream.repres_matr_0,
-                                                 self.timer_stream.repres_matr]]))
+                                                 self.timer_stream.repres_matr]]),
+                                       dtype=float)
         self.I_WM = np.eye(self.queries_stream.dim_ * self.serv_stream.dim)
         self.I_W = np.eye(self.queries_stream.dim_)
         self.I_M = np.eye(self.serv_stream.dim)
@@ -160,7 +161,7 @@ class TwoPrioritiesQueueingSystem:
 
         print("Q_00 calculated")
 
-        return np.array(matrQ_00)
+        return np.array(matrQ_00, dtype=float)
 
     def _calc_Q_0k(self):
         """
@@ -238,7 +239,8 @@ class TwoPrioritiesQueueingSystem:
             blocks1k.append(last_block1)
 
             temp_matr = np.array(np.bmat([blocks0k,
-                                          blocks1k]))
+                                          blocks1k]),
+                                 dtype=float)
 
             matrQ_0k.append(temp_matr)
 
@@ -337,7 +339,8 @@ class TwoPrioritiesQueueingSystem:
         print("Q_0N calculated")
 
         return np.array(np.bmat([blocks0k,
-                                 blocks1k]))
+                                 blocks1k]),
+                        dtype=float)
 
     def _calc_Q_10(self):
         """
@@ -363,7 +366,8 @@ class TwoPrioritiesQueueingSystem:
         print("Q_10 calculated")
 
         return np.array(np.bmat([[block00, block01],
-                                 [block10, block11]]))
+                                 [block10, block11]]),
+                        dtype=float)
 
     def _calc_Q_iiprev(self):
         """
@@ -771,12 +775,14 @@ class TwoPrioritiesQueueingSystem:
 
     def calc_system_empty_proba(self, stationary_probas):
         r_multiplier = np.array(np.bmat([[e_col(self.queries_stream.dim_)],
-                                         [np.zeros((self.queries_stream.dim_ * self.serv_stream.dim, 1))]]))
+                                         [np.zeros((self.queries_stream.dim_ * self.serv_stream.dim, 1))]]),
+                                dtype=float)
         return np.dot(stationary_probas[0], r_multiplier)[0][0]
 
     def calc_system_single_query_proba(self, stationary_probas):
         r_multiplier = np.array(np.bmat([[np.zeros((self.queries_stream.dim_, 1))],
-                                         [e_col(self.queries_stream.dim_ * self.serv_stream.dim)]]))
+                                         [e_col(self.queries_stream.dim_ * self.serv_stream.dim)]]),
+                                dtype=float)
         return np.dot(stationary_probas[0], r_multiplier)[0][0]
 
     def calc_buffer_i_queries_j_nonprior(self, stationary_probas, i, j):
@@ -789,7 +795,8 @@ class TwoPrioritiesQueueingSystem:
                                                self.timer_stream.dim - 1) for l in range(j + 1, i + 1)]))
         r_multiplier = np.array(np.bmat([[np.zeros((block0_size, 1))],
                                          [e_col(block1_size)],
-                                         [np.zeros((block2_size, 1))]]))
+                                         [np.zeros((block2_size, 1))]]),
+                                dtype=float)
         return np.dot(stationary_probas[i],
                       r_multiplier)[0][0]
 
@@ -808,7 +815,8 @@ class TwoPrioritiesQueueingSystem:
         p_loss = np.dot(stationary_probas[0],
                         np.array(np.bmat([[self.I_W],
                                           [kron(self.I_W,
-                                                e_col(self.serv_stream.dim))]])))
+                                                e_col(self.serv_stream.dim))]]),
+                                 dtype=float))
         r_sum = np.dot(stationary_probas[1],
                        kron(kron(self.I_W,
                                  e_col(self.serv_stream.dim)),
@@ -841,7 +849,8 @@ class TwoPrioritiesQueueingSystem:
         p_loss = np.dot(stationary_probas[0],
                         np.array(np.bmat([[np.zeros((self.queries_stream.dim_, self.serv_stream.dim))],
                                           [kron(e_col(self.queries_stream.dim_),
-                                                self.I_M)]])))  # checked
+                                                self.I_M)]]),
+                                 dtype=float))  # checked
         r_sum = np.dot(stationary_probas[1],
                        kron(kron(e_col(self.queries_stream.dim_),
                                  self.I_M),

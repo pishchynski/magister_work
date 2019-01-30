@@ -83,7 +83,7 @@ def system_solve(matr):
     :param matr: np.array
     :return: np.array with vect
     """
-    matr_a = np.array(matr)
+    matr_a = np.array(matr, dtype=float)
 
     for i in range(matr_a.shape[0]):
         matr_a[i][0] = 1
@@ -104,9 +104,9 @@ def r_multiply_e(matr):
     :return: any type with the result of multiplication
     """
     if len(matr.shape) > 1:
-        vect_e = np.array([[1.] for _ in range(matr.shape[1])])
+        vect_e = np.array([[1] for _ in range(matr.shape[1])], dtype=float)
     elif len(matr.shape) > 0:
-        vect_e = np.array([[1.] for _ in range(matr.shape[0])])
+        vect_e = np.array([[1] for _ in range(matr.shape[0])], dtype=float)
     else:
         vect_e = 1.
     result = np.dot(matr, vect_e)
@@ -120,7 +120,7 @@ def e_col(dim):
     :param dim: int dimension
     :return: np.array with unitary vector-column
     """
-    return np.array([[1.] for _ in range(dim)])
+    return np.array([[1] for _ in range(dim)], dtype=float)
 
 
 def matr_print(matr, file=sys.stdout):

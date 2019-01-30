@@ -28,7 +28,7 @@ def get_matr_LzNT(matr_T: np.ndarray, N: int):
 
                 m_A += matr_L[N - 1].shape[1]  # added same num of rows as cols because matrix is square
 
-                temp = np.array([[0 for _ in range(n_A)] for _ in range(m_A)])  # elements of matrix to use positions
+                temp = np.array([[0 for _ in range(n_A)] for _ in range(m_A)], dtype=float)  # elements of matrix to use positions
 
                 n_pos = 0
                 m_pos = 0
@@ -120,7 +120,7 @@ def calc_ramaswami_matrices(matr_S: np.ndarray, matr_tilde_S: np.ndarray, vect_b
     """
     matr_U = []
     matr_L = []
-    matr_A = [np.array([[0]])]  # we start from A_1
+    matr_A = [np.array([[0]], dtype=float)]  # we start from A_1
     matr_P1 = [0 for _ in range(N)] if N > 0 else [0]
     M = matr_S.shape[0]  # number of phases
     matr_tau = [0]
@@ -139,7 +139,7 @@ def calc_ramaswami_matrices(matr_S: np.ndarray, matr_tilde_S: np.ndarray, vect_b
 
             for m in range(1, N + 1):
                 if j == 0:
-                    temp = np.array([[0 for _ in range(m + 1)] for _ in range(m + 1)])
+                    temp = np.array([[0 for _ in range(m + 1)] for _ in range(m + 1)], dtype=float)
 
                     for l in range(m):
                         temp[l][l + 1] = (m - l) * matr_S[M - 2][M - 1]
@@ -157,7 +157,7 @@ def calc_ramaswami_matrices(matr_S: np.ndarray, matr_tilde_S: np.ndarray, vect_b
                     m_A += matr_U[N].shape[0]
                     n_A += matr_U[N - m + 1].shape[1]
 
-                    temp = np.array([[0 for _ in range(n_A)] for _ in range(m_A)])
+                    temp = np.array([[0 for _ in range(n_A)] for _ in range(m_A)], dtype=float)
 
                     m_pos = 0
                     n_pos = 0
@@ -188,7 +188,7 @@ def calc_ramaswami_matrices(matr_S: np.ndarray, matr_tilde_S: np.ndarray, vect_b
             a = [[]]
 
             if j != 0:
-                a = np.array([[0 for _ in range(j + 1)]])
+                a = np.array([[0 for _ in range(j + 1)]], dtype=float)
 
                 for k in range(M - j - 1, M):
                     a[0][k - M + j + 1] = vect_beta[0][k]  # beta_g_1 ???
@@ -197,7 +197,7 @@ def calc_ramaswami_matrices(matr_S: np.ndarray, matr_tilde_S: np.ndarray, vect_b
 
             for m in range(1, N):
                 if j == 0:
-                    temp = np.array([[0 for _ in range(m + 2)] for _ in range(m + 1)])
+                    temp = np.array([[0 for _ in range(m + 2)] for _ in range(m + 1)], dtype=float)
 
                     for l in range(m + 1):
                         temp[l][l + 1] = vect_beta[0][M - 1]
@@ -213,7 +213,7 @@ def calc_ramaswami_matrices(matr_S: np.ndarray, matr_tilde_S: np.ndarray, vect_b
                         n_A += matr_P1[k].shape[1]
 
                     n_A += a[0].shape[0]
-                    temp = np.array([[0 for _ in range(n_A)] for _ in range(m_A)])
+                    temp = np.array([[0 for _ in range(n_A)] for _ in range(m_A)], dtype=float)
 
                     m_pos = 1
                     n_pos = 1
