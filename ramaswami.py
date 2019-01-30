@@ -5,16 +5,19 @@ from utils import *
 
 def get_matr_LzNT(matr_T: np.ndarray, N: int):
     matr_L = [0 for _ in range(N)]
-    if (matr_T.shape[0] != matr_T.shape[1]):
+
+    if matr_T.shape[0] != matr_T.shape[1]:
         print("T matrix must be square!")
         return None
+
     r = matr_T.shape[0]
 
     for w in range(r - 1):
         matr_Lz = [0 for _ in range(N)]
+
         for z in range(N):
             if w == 0:
-                matr_L[z] = (N - z) * np.dot(matr_T[r - 1][0], np.identity(1))
+                matr_L[z] = (N - z) * matr_T[r - 1][0] * np.identity(1)
             else:
                 m_A = 0  # L_i^w rows num
                 n_A = 0  # L_I^w cols num
@@ -32,10 +35,15 @@ def get_matr_LzNT(matr_T: np.ndarray, N: int):
 
                 for l in range(N - z):
                     shift = matr_L[N - l - 1].shape[1]
-                    copy_matrix_block(temp, (N - l) * matr_T[r - 1 - w][0] * np.identity(shift), m_pos, n_pos)
+
+                    copy_matrix_block(temp, (N - z - l) * matr_T[r - 1 - w][0] * np.identity(shift), m_pos, n_pos)
+
                     m_pos += shift
+
                     copy_matrix_block(temp, matr_L[N - l - 1], m_pos, n_pos)
+
                     n_pos += shift
+
                 matr_Lz[z] = temp
 
         if w != 0:
