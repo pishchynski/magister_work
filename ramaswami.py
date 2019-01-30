@@ -16,14 +16,14 @@ def get_matr_LzNT(matr_T: np.ndarray, N: int):
             if w == 0:
                 matr_L[z] = (N - z) * np.dot(matr_T[r - 1][0], np.identity(1))
             else:
-                m_A = 0     # L_i^w rows num
-                n_A = 0     # L_I^w cols num
+                m_A = 0  # L_i^w rows num
+                n_A = 0  # L_I^w cols num
 
                 for k in range(N - 1, z - 1, -1):
                     m_A += matr_L[k].shape[0]
                     n_A += matr_L[k].shape[1]
 
-                m_A += matr_L[N - 1].shape[1]   # added same num of rows as cols because matrix is square
+                m_A += matr_L[N - 1].shape[1]  # added same num of rows as cols because matrix is square
 
                 temp = np.array([[0 for _ in range(n_A)] for _ in range(m_A)])  # elements of matrix to use positions
 
@@ -104,9 +104,9 @@ def calc_ramaswami_matrices(matr_S: np.ndarray, matr_tilde_S: np.ndarray, vect_b
     """
     matr_U = []
     matr_L = []
-    matr_A = []
+    matr_A = [[[0]]]  # we start from A_1
     matr_P1 = [0 for _ in range(N)] if N > 0 else [0]
-    M = matr_S.shape[0]     # number of phases
+    M = matr_S.shape[0]  # number of phases
     matr_tau = [0]
     if M != 1:
         matr_tau[0] = matr_S
@@ -143,33 +143,28 @@ def calc_ramaswami_matrices(matr_S: np.ndarray, matr_tilde_S: np.ndarray, vect_b
 
                     temp = np.array([[0 for _ in range(n_A)] for _ in range(m_A)])
 
-                    m_pos_u = 0
-                    n_pos_u = matr_L[N - 1].shape[1]
-
-                    m_pos_l = matr_U[N].shape[0]
-                    n_pos_l = 0
+                    m_pos = 0
+                    n_pos = 0
 
                     for l in range(m):
-                        copy_matrix_block(temp, matr_A[l + 1], m_pos_u, n_pos_l)
-
                         u = 1.0 * (m - l) / (N - l)
 
-                        copy_matrix_block(temp, u * matr_U[N - l], m_pos_u, n_pos_u)
+                        copy_matrix_block(temp, u * matr_U[N - l], m_pos, n_pos + matr_L[N - l - 1].shape[1])
 
-                        m_pos_u += matr_U[N - l].shape[0]
-                        n_pos_u += matr_U[N - l].shape[1]
+                        n_pos += matr_L[N - l - 1].shape[1]
 
-                        copy_matrix_block(temp, matr_L[N - l - 1], m_pos_l, n_pos_l)
+                        copy_matrix_block(temp, matr_L[N - l - 1], m_pos + matr_U[N - l].shape[0], n_pos)
 
-                        m_pos_l += matr_L[N - l - 1].shape[0]
-                        n_pos_l += matr_L[N - l - 1].shape[1]
+                        m_pos += matr_U[N - l].shape[0]
+                        n_pos += matr_L[N - l - 1].shape[1]
+
+                        copy_matrix_block(temp, matr_A[l + 1], m_pos, n_pos)
 
                     matr_Az[m] = temp
+
             if j != 0:
                 for m in range(1, N + 1):
                     matr_A[m] = matr_Az[m]
-
-        matr_A = [np.array([[0]])] + matr_A
 
         print('Calculating P_1_i(beta)')
         for j in range(M - 1):
