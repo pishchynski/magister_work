@@ -1,17 +1,17 @@
 import numpy as np
 
 
-class Bmmap304PhPh:
+class Mmap02PhPh:
     def __init__(self):
         # BMMAP
-        self.test_matrD_0 = np.array([[-86, 0.01],
-                                      [0.02, -2.76]]) * 0.973076224985
+        self.test_matrD_0 = np.array([[-5.408, 0.],
+                                      [0., -0.1755]]) * 8.00137983712
 
-        self.test_matrD = np.array([[85, 0.99],
-                                    [0.2, 2.54]]) * 0.973076224985
+        self.test_matrD = np.array([[5.372, 0.036],
+                                    [0.09772, 0.07778]]) * 8.00137983712
 
         self.test_q = 0.8
-        self.test_n = 3
+        self.test_n = 1
 
         self.test_N = 5
         self.p_hp = 0.4

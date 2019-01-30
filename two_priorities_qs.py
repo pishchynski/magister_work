@@ -22,12 +22,14 @@ class TwoPrioritiesQueueingSystem:
 
         self._eps_proba = 10 ** (-6)
 
-        self.queries_stream = BMMAPStream(experiment_data.test_matrD_0, experiment_data.test_matrD, experiment_data.test_q, experiment_data.test_n)
+        self.queries_stream = BMMAPStream(experiment_data.test_matrD_0, experiment_data.test_matrD,
+                                          experiment_data.test_q, experiment_data.test_n)
         self.serv_stream = PHStream(experiment_data.test_vect_beta, experiment_data.test_matrS)
         self.timer_stream = PHStream(experiment_data.test_vect_gamma, experiment_data.test_matrGamma)
         self.matr_hat_Gamma = np.array(np.bmat([[np.zeros((1, self.timer_stream.repres_matr_0.shape[1])),
                                                  np.zeros((1, self.timer_stream.repres_matr.shape[1]))],
-                                                [self.timer_stream.repres_matr_0, self.timer_stream.repres_matr]]))
+                                                [self.timer_stream.repres_matr_0,
+                                                 self.timer_stream.repres_matr]]))
         self.I_WM = np.eye(self.queries_stream.dim_ * self.serv_stream.dim)
         self.I_W = np.eye(self.queries_stream.dim_)
         self.I_M = np.eye(self.serv_stream.dim)
@@ -35,13 +37,26 @@ class TwoPrioritiesQueueingSystem:
                                self.serv_stream.repres_vect)
 
         self.p_hp = experiment_data.p_hp  # probability of the query to leave system after the timer's up
-        self.n = experiment_data.test_n         # number of D_i matrices
-        self.N = experiment_data.test_N              # buffer capacity
+        self.n = experiment_data.test_n  # number of D_i matrices
+        self.N = experiment_data.test_N  # buffer capacity
         self.ramatrL, self.ramatrA, self.ramatrP = self._calc_ramaswami_matrices(0, self.N)
+
+        if verbose:
+            print("\n=====RAMASWAMI MATRICES=====\n")
+            for block_num, matr in enumerate(self.ramatrL[self.N]):
+                    print('L_' + str(self.N) + ',' + str(block_num) + '\n', matr)
+
+            for block_num, matr in enumerate(self.ramatrA[self.N]):
+                    print('A_' + str(self.N) + ',' + str(block_num) + '\n', matr)
+
+            for block_num, matr in enumerate(self.ramatrP[-1]):
+                    print('P_' + str(block_num) + '\n', matr)
+
+            print("\n=====END RAMASWAMI MATRICES=====\n")
 
         self.generator = None
 
-        self.recalculate_generator()
+        self.recalculate_generator(verbose=verbose)
 
     def set_BMMAP_queries_stream(self, matrD_0, matrD, q=0.8, n=3, recalculate_generator=False):
         self.queries_stream = BMAPStream(matrD_0, matrD, q, n)
@@ -88,9 +103,15 @@ class TwoPrioritiesQueueingSystem:
         self.check_generator(matrQ_0k, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN)
         self.finalize_generator(matrQ_0k, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN)
 
-        print("Generator recalculated")
+        print("Generator recalculated:")
 
-    def _calc_ramaswami_matrices(self, start=0, end=None):
+        if verbose:
+            for row_num, block_row in enumerate(self.generator):
+                print('Row', row_num)
+                for block_num, block in enumerate(block_row):
+                    print('Q_' + str(row_num) + ',' + str(block_num), block)
+
+    def _calc_ramaswami_matrices(self, start=0, end=None, verbose=False):
         """
         Calculates Ramaswami matrices L, A and P.
 
@@ -153,7 +174,8 @@ class TwoPrioritiesQueueingSystem:
         for k in range(1, self.N):
             # block00 = np.zeros(self.queries_stream.transition_matrices[0][1].shape)
             if k + 1 > self.n:
-                block00 = kron(np.zeros(self.queries_stream.transition_matrices[0][1].shape),   # this shape suits because all D_{i}^{1} have same shape
+                block00 = kron(np.zeros(self.queries_stream.transition_matrices[0][1].shape),
+                               # this shape suits because all D_{i}^{1} have same shape
                                self.serv_stream.repres_vect)
             else:
                 block00 = kron(self.queries_stream.transition_matrices[0][k + 1],
@@ -161,7 +183,8 @@ class TwoPrioritiesQueueingSystem:
 
             # block10 = np.zeros(self.queries_stream.transition_matrices[0][1].shape)
             if k > self.n:
-                block10 = kron(np.zeros(self.queries_stream.transition_matrices[0][1].shape),   # this shape suits because all D_{i}^{1} have same shape
+                block10 = kron(np.zeros(self.queries_stream.transition_matrices[0][1].shape),
+                               # this shape suits because all D_{i}^{1} have same shape
                                self.I_M)
             else:
                 block10 = kron(self.queries_stream.transition_matrices[0][k],
@@ -186,7 +209,8 @@ class TwoPrioritiesQueueingSystem:
                                    )))
             blocks1k.append(temp_block)
 
-            ramatrP_mul = copy.deepcopy(self.ramatrP[-1][0])    # first index is '-1' because calc_ramaswami() returns all iterations of matrices
+            ramatrP_mul = copy.deepcopy(
+                self.ramatrP[-1][0])  # first index is '-1' because calc_ramaswami() returns all iterations of matrices
             for i in range(1, k):
                 ramatrP_mul = np.dot(ramatrP_mul, self.ramatrP[-1][i])
 
@@ -564,7 +588,7 @@ class TwoPrioritiesQueueingSystem:
 
             matrQ_iN.append(cur_matr)
 
-            print("Q_{i, N} calculated")
+        print("Q_{i, N} calculated")
 
         return matrQ_iN
 
@@ -798,15 +822,14 @@ class TwoPrioritiesQueueingSystem:
 
         for i in range(2, self.N):
             r_sum_temp = np.dot(stationary_probas[i],
-                            kron(kron(self.I_W,
-                                      e_col(self.serv_stream.dim)),
-                                 e_col(np.sum([ncr(j + self.timer_stream.dim - 1,
-                                                   self.timer_stream.dim - 1) for j in range(i + 1)]))))
+                                kron(kron(self.I_W,
+                                          e_col(self.serv_stream.dim)),
+                                     e_col(np.sum([ncr(j + self.timer_stream.dim - 1,
+                                                       self.timer_stream.dim - 1) for j in range(i + 1)]))))
             d_sum = (i - self.N) * self.queries_stream.transition_matrices[0]
             for k in range(1, self.N - 1):
                 d_sum += (k - self.N + i) * self.queries_stream.transition_matrices[k]
             r_sum += np.dot(r_sum_temp, d_sum)
-
 
         p_loss = p_loss + r_sum
         p_loss = np.dot(p_loss, self.serv_stream.repres_matr_0)
@@ -818,7 +841,7 @@ class TwoPrioritiesQueueingSystem:
         p_loss = np.dot(stationary_probas[0],
                         np.array(np.bmat([[np.zeros((self.queries_stream.dim_, self.serv_stream.dim))],
                                           [kron(e_col(self.queries_stream.dim_),
-                                                self.I_M)]])))
+                                                self.I_M)]])))  # checked
         r_sum = np.dot(stationary_probas[1],
                        kron(kron(e_col(self.queries_stream.dim_),
                                  self.I_M),

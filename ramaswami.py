@@ -92,38 +92,43 @@ def get_matr_UzNT(matr_T: np.ndarray, N: int):
     return matr_U
 
 
-def calc_ramaswami_matrices(matr_S: np.ndarray, matr_tilde_S: np.ndarray, vect_beta: np.ndarray, N: int):
+def calc_ramaswami_matrices(matr_S: np.ndarray, matr_tilde_S: np.ndarray, vect_beta: np.ndarray, N: int, verbose=False):
     """
     Calculates Ramaswami matrices L_i, A_i and P_i
 
-    :param matr_S:
-    :param matr_tilde_S:
-    :param vect_beta:
-    :param N:
+    :param matr_S: PH matrix
+    :param matr_tilde_S: [[0, 0], [S_0, S]] matrix
+    :param vect_beta: PH vector
+    :param N: number of servers
     :return:
     """
     matr_U = []
     matr_L = []
     matr_A = []
     matr_P1 = [0 for _ in range(N)] if N > 0 else [0]
-    M = matr_S.shape[0]
+    M = matr_S.shape[0]     # number of phases
     matr_tau = [0]
     if M != 1:
         matr_tau[0] = matr_S
+
         for k in range(1, M):
             matr_tau.append(matr_S[k:, k:])
+
         for j in range(M - 1):
             if j != 0:
                 matr_U = get_matr_UzNT(matr_tau[M - 2 - j], N)
                 matr_L = get_matr_LzNT(matr_tau[M - 2 - j], N)
+
             matr_Az = [0 for _ in range(N + 1)]
 
             for m in range(1, N + 1):
                 if j == 0:
                     temp = np.array([[0 for _ in range(m + 1)] for _ in range(m + 1)])
+
                     for l in range(m):
                         temp[l][l + 1] = (m - l) * matr_S[M - 2][M - 1]
                         temp[l + 1][l] = (l + 1) * matr_S[M - 1][M - 2]
+
                     matr_A.append(temp)
                 else:
                     m_A = 0
