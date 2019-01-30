@@ -46,13 +46,16 @@ def get_matr_LzNT(matr_T: np.ndarray, N: int):
 
 
 def get_matr_UzNT(matr_T: np.ndarray, N: int):
-    if (matr_T.shape[0] != matr_T.shape[1]):
+
+    if matr_T.shape[0] != matr_T.shape[1]:
         print("T matrix must be square!")
         return None
+
     matr_U = [0 for _ in range(N + 1)]
     matr_U_temp = [0 for _ in range(N + 1)]
 
     r = matr_T.shape[0]
+
     for w in range(r - 1):
         matr_Uz = [0 for _ in range(N + 1)]
 
@@ -70,21 +73,26 @@ def get_matr_UzNT(matr_T: np.ndarray, N: int):
                 n_A += matr_U_temp[N].shape[0]
 
                 temp = [[0 for _ in range(n_A)] for _ in range(m_A)]
+
                 n_pos = 0
                 m_pos = 0
 
-                for l in range(N - z):
-                    shift = matr_U_temp[N - 1].shape[0]
+                for l in range(N - z + 1):
+                    shift = matr_U_temp[N - l].shape[0]
+
                     copy_matrix_block(temp, matr_T[0][r - 1 - w] * np.identity(shift), m_pos, n_pos)
+
                     n_pos += shift
-                    copy_matrix_block(temp, matr_U_temp[N - 1], m_pos, n_pos)
+
+                    copy_matrix_block(temp, matr_U_temp[N - l], m_pos, n_pos)
+
                     m_pos += shift
 
                 matr_Uz[z] = temp
 
         if w != 0:
             for z in range(1, N + 1):
-                matr_U_temp[z] = matr_Uz[z]
+                matr_U_temp[z] = copy.deepcopy(matr_Uz[z])
 
     for z in range(1, N + 1):
         matr_U[z] = z * matr_U_temp[z]
