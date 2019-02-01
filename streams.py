@@ -182,7 +182,7 @@ class BMMAPStream:
         print('Correlation coefficient:', self.c_cor, file=file)
         print('=======END=======', '\n', file=file)
 
-    def __init__(self, matrD_0, matrD, q=0.8, n=3, t_num=2):
+    def __init__(self, matrD_0, matrD, q=0.8, n=3, t_num=2, priority_part=0.7):
         """
         Constructor for BMMAPStream.
         transition_matrices is a list where each row is transition matrices for one query type
@@ -198,8 +198,8 @@ class BMMAPStream:
         self.q = q
         self.transition_matrices = [[] for _ in range(t_num)]
         self.matrD_0 = np.array(matrD_0, dtype=float)
-        # matrD_t = [0.7 * np.array(matrD), 0.3 * np.array(matrD)]
-        matrD_t = [0.99999999999 * np.array(matrD, dtype=float), 0.00000000001 * np.array(matrD, dtype=float)]
+        matrD_t = [priority_part * np.array(matrD, dtype=float), (1.0 - priority_part) * np.array(matrD, dtype=float)]
+        # matrD_t = [0.99999999999 * np.array(matrD, dtype=float), 0.00000000001 * np.array(matrD, dtype=float)]
         # matrD_t = [0.0000000000000001 * np.array(matrD), 0.9999999999999999 * np.array(matrD)]
         for t in range(t_num):
             if n == 3:

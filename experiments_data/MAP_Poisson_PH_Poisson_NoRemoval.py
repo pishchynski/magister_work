@@ -1,7 +1,7 @@
 import numpy as np
 
 
-class MmapPoissonPhPoissonNoRemoval:
+class MapPoissonPhPoissonNoRemoval:
     def __init__(self):
         # BMMAP
         self.test_matrD_0 = np.array([[-32.]])
@@ -10,7 +10,7 @@ class MmapPoissonPhPoissonNoRemoval:
         self.test_q = 0.8
         self.test_n = 1
 
-        self.priority_part = 0.7
+        self.priority_part = 0.99999999999
 
         self.test_N = 5
         self.p_hp = 10. ** (-5)

@@ -10,6 +10,8 @@ class MmapPoissonPh:
         self.test_q = 0.8
         self.test_n = 1
 
+        self.priority_part = 0.7
+
         self.test_N = 4
         self.p_hp = 10. ** (-5)
 

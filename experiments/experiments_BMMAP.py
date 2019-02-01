@@ -1,3 +1,5 @@
+import datetime
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -93,7 +95,7 @@ def main():
                loc=0)
     plt.title('Зависимость L от λ при различных\n коэффициентах корреляции длин двух соседних интервалов')
 
-    plt.savefig("plots/BMMAP3_L_lambda_cor_0_02_04_NoRemoval.png",
+    plt.savefig(str.format("plots/BMMAP3_L_lambda_cor_0_02_04_NoRemoval_{}.png", datetime.datetime.now()),
                 bbox_inches='tight')
     plt.close()
 
@@ -119,7 +121,7 @@ def main():
                loc=0)
     plt.title('Зависимость P_loss от λ при различных\n коэффициентах корреляции длин двух соседних интервалов')
 
-    plt.savefig("plots/BMMAP3_P_loss_lambda_cor_0_02_04_NoRemoval.png",
+    plt.savefig(str.format("plots/BMMAP3_P_loss_lambda_cor_0_02_04_NoRemoval_{}.png", datetime.datetime.now()),
                 bbox_inches='tight')
     plt.close()
 

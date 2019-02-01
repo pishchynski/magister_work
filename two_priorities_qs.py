@@ -22,8 +22,11 @@ class TwoPrioritiesQueueingSystem:
 
         self._eps_proba = 10 ** (-6)
 
-        self.queries_stream = BMMAPStream(experiment_data.test_matrD_0, experiment_data.test_matrD,
-                                          experiment_data.test_q, experiment_data.test_n)
+        self.queries_stream = BMMAPStream(matrD_0=experiment_data.test_matrD_0,
+                                          matrD=experiment_data.test_matrD,
+                                          q=experiment_data.test_q,
+                                          n=experiment_data.test_n,
+                                          priority_part=experiment_data.priority_part)
         self.serv_stream = PHStream(experiment_data.test_vect_beta, experiment_data.test_matrS)
         self.timer_stream = PHStream(experiment_data.test_vect_gamma, experiment_data.test_matrGamma)
         self.matr_hat_Gamma = np.array(np.bmat([[np.zeros((1, self.timer_stream.repres_matr_0.shape[1])),
