@@ -4,8 +4,8 @@ import numpy as np
 class MmapPoissonPhPoissonNoRemoval:
     def __init__(self):
         # BMMAP
-        self.test_matrD_0 = np.array([[-32.]])
-        self.test_matrD = np.array([[32.]])
+        self.test_matrD_0 = np.array([[-10.]])
+        self.test_matrD = np.array([[10.]])
 
         self.test_q = 0.8
         self.test_n = 1

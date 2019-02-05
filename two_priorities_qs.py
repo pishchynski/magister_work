@@ -37,6 +37,9 @@ class TwoPrioritiesQueueingSystem:
         self.I_WM = np.eye(self.queries_stream.dim_ * self.serv_stream.dim)
         self.I_W = np.eye(self.queries_stream.dim_)
         self.I_M = np.eye(self.serv_stream.dim)
+
+        self.O_W = np.zeros((self.queries_stream.dim_, self.queries_stream.dim_))
+
         self.S_0xBeta = np.dot(self.serv_stream.repres_matr_0,
                                self.serv_stream.repres_vect)
 
@@ -684,7 +687,7 @@ class TwoPrioritiesQueueingSystem:
         print("Calculating Q_over")
 
         matrQ = self.generator
-        matrQover = [[None for _ in range(self.N)] + [matrQ[i][self.N]] for i in range(self.N + 1)]
+        matrQover = [[None for _ in range(self.N)] + [copy.deepcopy(matrQ[i][self.N])] for i in range(self.N + 1)]
         for k in range(self.N - 1, -1, -1):
             for i in range(k + 1):
                 matrQover[i][k] = matrQ[i][k] + np.dot(matrQover[i][k + 1], matrG[k])
@@ -698,7 +701,7 @@ class TwoPrioritiesQueueingSystem:
 
         matrF = [None]
         for i in range(1, self.N + 1):
-            tempF = matrQover[0][i]
+            tempF = copy.deepcopy(matrQover[0][i])
             for j in range(1, i):
                 tempF = tempF + np.dot(matrF[j], matrQover[j][i])
             tempF = np.dot(tempF, la.inv(-matrQover[i][i]))
@@ -825,9 +828,10 @@ class TwoPrioritiesQueueingSystem:
                                  e_col(self.serv_stream.dim)),
                             e_col(np.sum([ncr(j + self.timer_stream.dim - 1,
                                               self.timer_stream.dim - 1) for j in range(2)]))))
-        d_sum_1 = (1 - self.N) * self.queries_stream.transition_matrices[0]
-        for k in range(1, self.N - 1):
-            d_sum_1 += (k - self.N + 1) * self.queries_stream.transition_matrices[k]
+        d_sum_1 = (1 - self.N) * self.queries_stream.matrD_0
+        for k in range(1, self.N):
+            if k <= self.n:
+                d_sum_1 += (k - self.N + 1) * (self.queries_stream.transition_matrices[0][k] + self.queries_stream.transition_matrices[1][k])
 
         r_sum = np.dot(r_sum, d_sum_1)
 
@@ -837,14 +841,14 @@ class TwoPrioritiesQueueingSystem:
                                           e_col(self.serv_stream.dim)),
                                      e_col(np.sum([ncr(j + self.timer_stream.dim - 1,
                                                        self.timer_stream.dim - 1) for j in range(i + 1)]))))
-            d_sum = (i - self.N) * self.queries_stream.transition_matrices[0]
-            for k in range(1, self.N - 1):
-                d_sum += (k - self.N + i) * self.queries_stream.transition_matrices[k]
+            d_sum = (i - self.N) * self.queries_stream.matrD_0
+            for k in range(1, self.N - i + 1):
+                if k <= self.n:
+                    d_sum += (k - self.N + i) * (self.queries_stream.transition_matrices[0][k] + self.queries_stream.transition_matrices[1][k])
             r_sum += np.dot(r_sum_temp, d_sum)
 
         p_loss = p_loss + r_sum
-        p_loss = np.dot(p_loss, self.serv_stream.repres_matr_0)
-        p_loss = 1 - (1 / self.queries_stream.avg_intensity_t[0]) * p_loss[0][0]
+        p_loss = 1 - (1 / self.queries_stream.avg_intensity) * p_loss[0][0]
 
         return p_loss
 
@@ -898,8 +902,8 @@ class TwoPrioritiesQueueingSystem:
         if verbose:
             print("P_loss =", p_loss)
 
-        # p_loss_alg = self.calc_query_lost_p_alg(stationary_probas)
-        # print("P_loss_alg =", p_loss_alg)
+        p_loss_alg = self.calc_query_lost_p_alg(stationary_probas)
+        print("P_loss_alg =", p_loss_alg)
 
     def print_generator(self, as_latex=True):
         for row_num, block_row in enumerate(self.generator):

@@ -70,23 +70,23 @@ def main():
 
         lambdas["poisson"].append(qs1.queries_stream.avg_intensity)
         Ls["poisson"].append(qs1.calc_avg_buffer_queries_num(stationary_probas1))
-        Ps["poisson"].append(qs1.calc_query_lost_p(stationary_probas1))
+        Ps["poisson"].append(qs1.calc_query_lost_p_alg(stationary_probas1))
 
         lambdas["cor02"].append(qs2.queries_stream.avg_intensity)
         Ls["cor02"].append(qs2.calc_avg_buffer_queries_num(stationary_probas2))
-        Ps["cor02"].append(qs2.calc_query_lost_p(stationary_probas2))
+        Ps["cor02"].append(qs2.calc_query_lost_p_alg(stationary_probas2))
 
         lambdas["cor04"].append(qs3.queries_stream.avg_intensity)
         Ls["cor04"].append(qs3.calc_avg_buffer_queries_num(stationary_probas3))
-        Ps["cor04"].append(qs3.calc_query_lost_p(stationary_probas3))
+        Ps["cor04"].append(qs3.calc_query_lost_p_alg(stationary_probas3))
 
         lambdas["poisson_PH_poisson_NoRemoval"].append(qs4.queries_stream.avg_intensity)
         Ls["poisson_PH_poisson_NoRemoval"].append(qs4.calc_avg_buffer_queries_num(stationary_probas4))
-        Ps["poisson_PH_poisson_NoRemoval"].append(qs4.calc_query_lost_p(stationary_probas4))
+        Ps["poisson_PH_poisson_NoRemoval"].append(qs4.calc_query_lost_p_alg(stationary_probas4))
 
         lambdas["poisson_NoRemoval"].append(qs5.queries_stream.avg_intensity)
         Ls["poisson_NoRemoval"].append(qs5.calc_avg_buffer_queries_num(stationary_probas5))
-        Ps["poisson_NoRemoval"].append(qs5.calc_query_lost_p(stationary_probas5))
+        Ps["poisson_NoRemoval"].append(qs5.calc_query_lost_p_alg(stationary_probas5))
 
     plt.plot(lambdas["poisson"], Ls["poisson"])
     plt.plot(lambdas["cor02"], Ls["cor02"])
