@@ -37,7 +37,7 @@ def main():
     Ls = {"poisson": [], "cor02": [], "cor04": [], "poisson_PH_poisson_NoRemoval": [], "poisson_NoRemoval": []}
     Ps = {"poisson": [], "cor02": [], "cor04": [], "poisson_PH_poisson_NoRemoval": [], "poisson_NoRemoval": []}
 
-    for coef in np.linspace(0.01, 0.7, 50):
+    for coef in np.linspace(0.01, 3, 50):
         test_data_Poisson.test_matrD = test_data_Poisson_initial.test_matrD * coef
         test_data_Poisson.test_matrD_0 = test_data_Poisson_initial.test_matrD_0 * coef
 

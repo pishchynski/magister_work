@@ -51,13 +51,13 @@ class TwoPrioritiesQueueingSystem:
         if verbose:
             print("\n=====RAMASWAMI MATRICES=====\n")
             for block_num, matr in enumerate(self.ramatrL[self.N]):
-                    print('L_' + str(self.N) + ',' + str(block_num) + '\n', matr)
+                print('L_' + str(self.N) + ',' + str(block_num) + '\n', matr)
 
             for block_num, matr in enumerate(self.ramatrA[self.N]):
-                    print('A_' + str(self.N) + ',' + str(block_num) + '\n', matr)
+                print('A_' + str(self.N) + ',' + str(block_num) + '\n', matr)
 
             for block_num, matr in enumerate(self.ramatrP[-1]):
-                    print('P_' + str(block_num) + '\n', matr)
+                print('P_' + str(block_num) + '\n', matr)
 
             print("\n=====END RAMASWAMI MATRICES=====\n")
 
@@ -297,7 +297,7 @@ class TwoPrioritiesQueueingSystem:
                                             self.timer_stream.dim - 1)
                                         for j in range(1, self.N)]
                                    )))
-            blocks0k.append(temp_block)
+            blocks0k.append(copy.deepcopy(temp_block))
 
             temp_block = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim,
                                    self.queries_stream.dim_ * self.serv_stream.dim * sum(
@@ -305,7 +305,7 @@ class TwoPrioritiesQueueingSystem:
                                             self.timer_stream.dim - 1)
                                         for j in range(1, self.N)]
                                    )))
-            blocks1k.append(temp_block)
+            blocks1k.append(copy.deepcopy(temp_block))
 
         ramatrP_mul = copy.deepcopy(self.ramatrP[self.N][0])
         for i in range(1, self.N):
@@ -820,20 +820,46 @@ class TwoPrioritiesQueueingSystem:
     def calc_query_lost_p_alg(self, stationary_probas):
         p_loss = np.dot(stationary_probas[0],
                         np.array(np.bmat([[self.I_W],
-                                          [kron(self.I_W,
+                                          [kron(self.O_W,
                                                 e_col(self.serv_stream.dim))]]),
                                  dtype=float))
+
+        d_sum_1 = (-self.N - 1) * r_multiply_e(self.queries_stream.matrD_0)
+
+        for k in range(1, self.N + 2):
+            if k <= self.n:
+                d_sum_1 += (k - self.N - 1) * r_multiply_e(
+                    self.queries_stream.transition_matrices[0][k] + self.queries_stream.transition_matrices[1][k])
+
+        p_loss = np.dot(p_loss, d_sum_1)  # First addend
+
+        p_loss_2 = np.dot(stationary_probas[0],
+                          np.array(np.bmat([[self.O_W],
+                                            [kron(self.I_W,
+                                                  e_col(self.serv_stream.dim))]]),
+                                   dtype=float))
+
+        d_sum_2 = (-self.N) * r_multiply_e(self.queries_stream.matrD_0)
+
+        for k in range(1, self.N + 1):
+            if k <= self.n:
+                d_sum_2 += (k - self.N) * r_multiply_e(
+                    self.queries_stream.transition_matrices[0][k] + self.queries_stream.transition_matrices[1][k])
+
+        p_loss += np.dot(p_loss_2, d_sum_2)  # added second addend
+
         r_sum = np.dot(stationary_probas[1],
                        kron(kron(self.I_W,
                                  e_col(self.serv_stream.dim)),
                             e_col(np.sum([ncr(j + self.timer_stream.dim - 1,
                                               self.timer_stream.dim - 1) for j in range(2)]))))
-        d_sum_1 = (1 - self.N) * self.queries_stream.matrD_0
+        d_sum_3 = (1 - self.N) * r_multiply_e(self.queries_stream.matrD_0)
         for k in range(1, self.N):
             if k <= self.n:
-                d_sum_1 += (k - self.N + 1) * (self.queries_stream.transition_matrices[0][k] + self.queries_stream.transition_matrices[1][k])
+                d_sum_3 += (k - self.N + 1) * r_multiply_e(
+                    self.queries_stream.transition_matrices[0][k] + self.queries_stream.transition_matrices[1][k])
 
-        r_sum = np.dot(r_sum, d_sum_1)
+        r_sum = np.dot(r_sum, d_sum_3)
 
         for i in range(2, self.N):
             r_sum_temp = np.dot(stationary_probas[i],
@@ -841,13 +867,14 @@ class TwoPrioritiesQueueingSystem:
                                           e_col(self.serv_stream.dim)),
                                      e_col(np.sum([ncr(j + self.timer_stream.dim - 1,
                                                        self.timer_stream.dim - 1) for j in range(i + 1)]))))
-            d_sum = (i - self.N) * self.queries_stream.matrD_0
+            d_sum = (i - self.N) * r_multiply_e(self.queries_stream.matrD_0)
             for k in range(1, self.N - i + 1):
                 if k <= self.n:
-                    d_sum += (k - self.N + i) * (self.queries_stream.transition_matrices[0][k] + self.queries_stream.transition_matrices[1][k])
+                    d_sum += (k - self.N + i) * r_multiply_e(self.queries_stream.transition_matrices[0][k] +
+                                                             self.queries_stream.transition_matrices[1][k])
             r_sum += np.dot(r_sum_temp, d_sum)
 
-        p_loss = p_loss + r_sum
+        p_loss += r_sum         # Final sum
         p_loss = 1 - (1 / self.queries_stream.avg_intensity) * p_loss[0][0]
 
         return p_loss
