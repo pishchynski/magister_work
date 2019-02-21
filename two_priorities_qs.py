@@ -4,8 +4,9 @@ from matr_E import get_matr_E
 
 sys.path.append("../")
 from streams import *
-from test_data_BMMAP3_PH_2 import *
 from ramaswami import calc_ramaswami_matrices
+import experiments_data.BMMAP3_04_PH_PH as test
+
 
 np.set_printoptions(threshold=np.inf, suppress=True, formatter={'float': '{: 0.8f}'.format}, linewidth=75)
 
@@ -940,7 +941,9 @@ class TwoPrioritiesQueueingSystem:
 
 
 if __name__ == '__main__':
-    qs = TwoPrioritiesQueueingSystem()
+    test_data = test.Bmmap304PhPh()
+
+    qs = TwoPrioritiesQueueingSystem(test_data, verbose=True)
     qs.queries_stream.print_characteristics()
     qs.serv_stream.print_characteristics(matrix_name='S', vector_name='beta')
     qs.timer_stream.print_characteristics(matrix_name='Г', vector_name='gamma')

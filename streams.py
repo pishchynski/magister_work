@@ -217,7 +217,7 @@ class BMMAPStream:
                 matrD_1_ += matr
 
         self.matrD_1_ = matrD_1_
-        matr_hat_D_k = [[] for _ in range(t_num)]
+        matr_hat_D_k = [[] for _ in range(t_num)]   # Numeration from zero
         for t in range(t_num):
             for k in range(n):
                 temp_matr = np.zeros(self.transition_matrices[t][k].shape)
@@ -225,7 +225,7 @@ class BMMAPStream:
                     temp_matr += self.transition_matrices[t][i]
                 matr_hat_D_k[t].append(temp_matr)
 
-        matr_cal_D_k = [[] for _ in range(t_num)]
+        matr_cal_D_k = [[] for _ in range(t_num)]   # Numeration from zero
         for t in range(t_num):
             for k in range(n):
                 temp_matr = np.zeros(self.transition_matrices[t][k].shape)
