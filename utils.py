@@ -1,3 +1,4 @@
+import copy
 import operator as op
 import sys
 from functools import reduce
@@ -48,7 +49,7 @@ characteristics_names = ['system_load',
                          'avg_switch_num']
 
 
-def kron(A, B):
+def kron(A: object, B: object) -> object:
     """
     Just np.linalg.kron() function.
     :param A: np.array
@@ -75,6 +76,44 @@ def kronsum(A, B):
     R = kron(np.eye(A.shape[0]), B)
 
     return L + R
+
+
+def kronpow(A, pow):
+    """
+    Kronecker power function.
+    :param A: np.array
+    :param pow: int
+    :return: np.array as a result of kronecker power A^pow
+    """
+    if pow == 0:
+        return np.array([[1]])
+
+    temp = copy.deepcopy(A)
+
+    for _ in range(1, pow):
+        temp = kron(temp, A)
+
+    return temp
+
+
+def kronsumpow(A, pow):
+    """
+    Kronecker "sum power" function.
+    :param A: np.array
+    :param pow: int
+    :return: np.array
+    """
+    if pow < 1:
+        raise ValueError("pow must be >= 1")
+
+    n = A.shape[0]
+
+    temp = kron(kron(np.eye(1), A), np.eye(n ** (pow - 1)))
+
+    for m in range(1, pow):
+        temp += kron(kron(np.eye(n ** m), A), np.eye(n ** (pow - m - 1)))
+
+    return temp
 
 
 def system_solve(matr):
