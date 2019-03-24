@@ -103,8 +103,11 @@ def kronsumpow(A, pow):
     :param pow: int
     :return: np.array
     """
-    if pow < 1:
-        raise ValueError("pow must be >= 1")
+    if pow < 0:
+        raise ValueError(str.format("pow must be >= 0, but {} given", pow))
+
+    if pow == 0:
+        return np.array([[0]])
 
     n = A.shape[0]
 
