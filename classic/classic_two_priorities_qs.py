@@ -692,12 +692,9 @@ class ClassicTwoPrioritiesQueueingSystem:
 
     def calc_buffer_i_queries_j_nonprior(self, stationary_probas, i, j):
         mulW_M = self.queries_stream.dim_ * self.serv_stream.dim
-        block0_size = int(mulW_M * np.sum([ncr(l + self.timer_stream.dim - 1,
-                                               self.timer_stream.dim - 1) for l in range(j)]))
-        block1_size = int(mulW_M * ncr(j + self.timer_stream.dim - 1,
-                                       self.timer_stream.dim - 1))
-        block2_size = int(mulW_M * np.sum([ncr(l + self.timer_stream.dim - 1,
-                                               self.timer_stream.dim - 1) for l in range(j + 1, i + 1)]))
+        block0_size = int(mulW_M * np.sum([(self.timer_stream.dim ** (l + 1) - 1)/(self.timer_stream.dim - 1) for l in range(j)]))
+        block1_size = int(mulW_M * (self.timer_stream.dim ** (j + 1) - 1)/(self.timer_stream.dim - 1))
+        block2_size = int(mulW_M * np.sum([(self.timer_stream.dim ** (l + 1) - 1)/(self.timer_stream.dim - 1) for l in range(j + 1, i + 1)]))
         r_multiplier = np.array(np.bmat([[np.zeros((block0_size, 1))],
                                          [e_col(block1_size)],
                                          [np.zeros((block2_size, 1))]]),
