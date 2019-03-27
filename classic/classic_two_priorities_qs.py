@@ -161,13 +161,14 @@ class ClassicTwoPrioritiesQueueingSystem:
 
             if k > 1:
                 temp_block = np.zeros((self.queries_stream.dim_,
-                                       self.queries_stream.dim_ * self.serv_stream.dim * self.timer_stream.dim * (self.timer_stream.dim ** (k - 1) - 1) / (self.timer_stream.dim - 1)))
+                                       self.queries_stream.dim_ * self.serv_stream.dim * self.timer_stream.dim * (
+                                               self.timer_stream.dim ** (k - 1) - 1) / (self.timer_stream.dim - 1)))
                 blocks0k.append(temp_block)
 
                 temp_block = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim,
-                                       self.queries_stream.dim_ * self.serv_stream.dim * self.timer_stream.dim * (self.timer_stream.dim ** (k - 1) - 1) / (self.timer_stream.dim - 1)))
+                                       self.queries_stream.dim_ * self.serv_stream.dim * self.timer_stream.dim * (
+                                               self.timer_stream.dim ** (k - 1) - 1) / (self.timer_stream.dim - 1)))
                 blocks1k.append(temp_block)
-
 
             if k + 1 > self.n:
                 last_block0 = kron(kron(np.zeros(self.queries_stream.transition_matrices[1][1].shape),
@@ -186,7 +187,7 @@ class ClassicTwoPrioritiesQueueingSystem:
             else:
                 last_block1 = kron(kron(self.queries_stream.transition_matrices[1][k],
                                         self.I_M),
-                                   kronpow(self.timer_stream.repres_vect, k) )
+                                   kronpow(self.timer_stream.repres_vect, k))
 
             blocks0k.append(last_block0)
             blocks1k.append(last_block1)
@@ -202,7 +203,6 @@ class ClassicTwoPrioritiesQueueingSystem:
         print("Q_0k calculated")
 
         return matrQ_0k
-
 
     def _calc_Q_0N(self):
         """
@@ -240,11 +240,13 @@ class ClassicTwoPrioritiesQueueingSystem:
 
         if self.N > 1:
             temp_block = np.zeros((self.queries_stream.dim_,
-                                   self.queries_stream.dim_ * self.serv_stream.dim * self.timer_stream.dim * int((self.timer_stream.dim ** (self.N - 1) - 1) / (self.timer_stream.dim - 1))))
+                                   self.queries_stream.dim_ * self.serv_stream.dim * self.timer_stream.dim * int(
+                                       (self.timer_stream.dim ** (self.N - 1) - 1) / (self.timer_stream.dim - 1))))
             blocks0k.append(copy.deepcopy(temp_block))
 
             temp_block = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim,
-                                   self.queries_stream.dim_ * self.serv_stream.dim * self.timer_stream.dim * int((self.timer_stream.dim ** (self.N - 1) - 1) / (self.timer_stream.dim - 1))))
+                                   self.queries_stream.dim_ * self.serv_stream.dim * self.timer_stream.dim * int(
+                                       (self.timer_stream.dim ** (self.N - 1) - 1) / (self.timer_stream.dim - 1))))
             blocks1k.append(copy.deepcopy(temp_block))
 
         if self.N + 1 > self.n:
@@ -368,9 +370,12 @@ class ClassicTwoPrioritiesQueueingSystem:
 
         matrQ_ii = [None]
         for i in range(1, self.N + 1):
-            cur_matr_blocks = tuple((kron(kronsum(self.queries_stream.matrD_0 if i != self.N else self.queries_stream.matrD_1_,
-                               self.serv_stream.repres_matr),
-                       np.eye(self.timer_stream.dim ** j)) + kron(self.I_WM, kronsumpow(self.timer_stream.repres_matr, j)) for j in range(i + 1)))
+            cur_matr_blocks = tuple(
+                (kron(kronsum(self.queries_stream.matrD_0 if i != self.N else self.queries_stream.matrD_1_,
+                              self.serv_stream.repres_matr),
+                      np.eye(self.timer_stream.dim ** j)) + kron(self.I_WM,
+                                                                 kronsumpow(self.timer_stream.repres_matr, j)) for j in
+                 range(i + 1)))
             block_shapes = [block.shape for block in cur_matr_blocks]
             cur_matr = la.block_diag(*cur_matr_blocks)
 
@@ -417,7 +422,9 @@ class ClassicTwoPrioritiesQueueingSystem:
 
                     zero_matr = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim *
                                           (self.timer_stream.dim ** (i + 1) - 1) / (self.timer_stream.dim - 1),
-                                          self.queries_stream.dim_ * self.serv_stream.dim * self.timer_stream.dim ** (i + 1) * (self.timer_stream.dim ** k - 1) / (self.timer_stream.dim - 1)
+                                          self.queries_stream.dim_ * self.serv_stream.dim * self.timer_stream.dim ** (
+                                                  i + 1) * (self.timer_stream.dim ** k - 1) / (
+                                                  self.timer_stream.dim - 1)
                                           ))
                     cur_matr = np.concatenate((cur_matr, zero_matr), axis=1)
 
@@ -430,8 +437,8 @@ class ClassicTwoPrioritiesQueueingSystem:
                     zero_matr = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim *
                                           (self.timer_stream.dim ** (i + 1) - 1) / (self.timer_stream.dim - 1),
                                           self.queries_stream.dim_ * self.serv_stream.dim * self.timer_stream.dim ** (
-                                                      i + 1) * (self.timer_stream.dim ** k - 1) / (
-                                                      self.timer_stream.dim - 1)
+                                                  i + 1) * (self.timer_stream.dim ** k - 1) / (
+                                                  self.timer_stream.dim - 1)
                                           ))
 
                     cur_matr = np.concatenate((cur_zero_matr, zero_matr), axis=1)
@@ -442,9 +449,10 @@ class ClassicTwoPrioritiesQueueingSystem:
                                                 for j in range(i + 1)))
 
                 zero_matr = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim *
-                                          (self.timer_stream.dim ** (i + 1) - 1) / (self.timer_stream.dim - 1),
-                                          self.queries_stream.dim_ * self.serv_stream.dim * (self.timer_stream.dim ** k - 1) / (self.timer_stream.dim - 1)
-                                          ))
+                                      (self.timer_stream.dim ** (i + 1) - 1) / (self.timer_stream.dim - 1),
+                                      self.queries_stream.dim_ * self.serv_stream.dim * (
+                                              self.timer_stream.dim ** k - 1) / (self.timer_stream.dim - 1)
+                                      ))
                 cur_matr += np.concatenate((zero_matr, temp_matr), axis=1)
 
                 matrQ_ii_row.append(cur_matr)
@@ -478,19 +486,28 @@ class ClassicTwoPrioritiesQueueingSystem:
             cur_matr = la.block_diag(*(kron(matrD1_sum, np.eye(self.serv_stream.dim * (self.timer_stream.dim ** j)))
                                        for j in range(i + 1)))
 
-            zero_matr = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim * int((self.timer_stream.dim ** (i + 1) - 1) / (self.timer_stream.dim - 1)),
-                                  self.queries_stream.dim_ * self.serv_stream.dim * int((self.timer_stream.dim ** (i + 1)) * (self.timer_stream.dim ** (self.N - i) - 1) / (self.timer_stream.dim - 1))))
+            zero_matr = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim * int(
+                (self.timer_stream.dim ** (i + 1) - 1) / (self.timer_stream.dim - 1)),
+                                  self.queries_stream.dim_ * self.serv_stream.dim * int(
+                                      (self.timer_stream.dim ** (i + 1)) * (
+                                              self.timer_stream.dim ** (self.N - i) - 1) / (
+                                              self.timer_stream.dim - 1))))
 
             cur_matr = np.concatenate((cur_matr, zero_matr), axis=1)
 
-            temp_matr = la.block_diag(*(kron(kron(matrD2_sum, np.eye(self.serv_stream.dim * self.timer_stream.dim ** j)),
-                                             kronsumpow(self.timer_stream.repres_vect, self.N - i))
-                                        for j in range(i + 1)))
+            temp_matr = la.block_diag(
+                *(kron(kron(matrD2_sum, np.eye(self.serv_stream.dim * self.timer_stream.dim ** j)),
+                       kronsumpow(self.timer_stream.repres_vect, self.N - i))
+                  for j in range(i + 1)))
 
             zero_matr = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim * int((
-                        self.timer_stream.dim ** (i + 1) - 1) / (self.timer_stream.dim - 1)),
+                                                                                                self.timer_stream.dim ** (
+                                                                                                i + 1) - 1) / (
+                                                                                                self.timer_stream.dim - 1)),
                                   self.queries_stream.dim_ * self.serv_stream.dim * int((
-                                              self.timer_stream.dim ** (self.N - i) - 1) / (self.timer_stream.dim - 1))))
+                                                                                                self.timer_stream.dim ** (
+                                                                                                self.N - i) - 1) / (
+                                                                                                self.timer_stream.dim - 1))))
 
             cur_matr += np.concatenate((zero_matr, temp_matr), axis=1)
 
@@ -692,9 +709,10 @@ class ClassicTwoPrioritiesQueueingSystem:
 
     def calc_buffer_i_queries_j_nonprior(self, stationary_probas, i, j):
         mulW_M = self.queries_stream.dim_ * self.serv_stream.dim
-        block0_size = int(mulW_M * np.sum([(self.timer_stream.dim ** (l + 1) - 1)/(self.timer_stream.dim - 1) for l in range(j)]))
-        block1_size = int(mulW_M * (self.timer_stream.dim ** (j + 1) - 1)/(self.timer_stream.dim - 1))
-        block2_size = int(mulW_M * np.sum([(self.timer_stream.dim ** (l + 1) - 1)/(self.timer_stream.dim - 1) for l in range(j + 1, i + 1)]))
+        block0_size = int(mulW_M * (self.timer_stream.dim ** j - 1) / (self.timer_stream.dim - 1))
+        block1_size = int(mulW_M * (self.timer_stream.dim ** j))
+        block2_size = int(mulW_M * self.timer_stream.dim ** (j + 1) * (self.timer_stream.dim ** (i - j) - 1) / (
+                self.timer_stream.dim - 1))
         r_multiplier = np.array(np.bmat([[np.zeros((block0_size, 1))],
                                          [e_col(block1_size)],
                                          [np.zeros((block2_size, 1))]]),
@@ -715,11 +733,16 @@ class ClassicTwoPrioritiesQueueingSystem:
              in range(1, self.N + 1)])
 
     def calc_query_lost_p_alg(self, stationary_probas):
-        p_loss = np.dot(stationary_probas[0],
-                        np.array(np.bmat([[self.I_W],
-                                          [kron(self.O_W,
-                                                e_col(self.serv_stream.dim))]]),
-                                 dtype=float))
+        p_loss = np.array(np.dot(stationary_probas[0],
+                        np.bmat([[self.I_W],
+                                 [kron(np.zeros((self.queries_stream.dim_,
+                                                 self.queries_stream.dim_)), e_col(self.serv_stream.dim))]])))
+
+        # for k in range(1, self.N):
+        #     p_loss += np.dot(stationary_probas[k],
+        #                      kron(kron(self.I_W,
+        #                                e_col(self.serv_stream.dim)),
+        #                           e_col((self.timer_stream.dim ** (k + 1) - 1) / self.timer_stream.dim - 1)))
 
         d_sum_1 = (-self.N - 1) * r_multiply_e(self.queries_stream.matrD_0)
 
@@ -730,12 +753,6 @@ class ClassicTwoPrioritiesQueueingSystem:
 
         p_loss = np.dot(p_loss, d_sum_1)  # First addend
 
-        p_loss_2 = np.dot(stationary_probas[0],
-                          np.array(np.bmat([[self.O_W],
-                                            [kron(self.I_W,
-                                                  e_col(self.serv_stream.dim))]]),
-                                   dtype=float))
-
         d_sum_2 = (-self.N) * r_multiply_e(self.queries_stream.matrD_0)
 
         for k in range(1, self.N + 1):
@@ -743,58 +760,43 @@ class ClassicTwoPrioritiesQueueingSystem:
                 d_sum_2 += (k - self.N) * r_multiply_e(
                     self.queries_stream.transition_matrices[0][k] + self.queries_stream.transition_matrices[1][k])
 
-        p_loss += np.dot(p_loss_2, d_sum_2)  # added second addend
+        p_loss += np.array(np.dot(np.dot(stationary_probas[0],
+                                         np.bmat([[np.zeros((self.queries_stream.dim_,
+                                                             self.queries_stream.dim_))],
+                                                  [kron(self.I_W,
+                                                        e_col(self.serv_stream.dim))]])),
+                                  d_sum_2))
 
-        r_sum = np.dot(stationary_probas[1],
-                       kron(kron(self.I_W,
-                                 e_col(self.serv_stream.dim)),
-                            e_col(np.sum([ncr(j + self.timer_stream.dim - 1,
-                                              self.timer_stream.dim - 1) for j in range(2)]))))
-        d_sum_3 = (1 - self.N) * r_multiply_e(self.queries_stream.matrD_0)
-        for k in range(1, self.N):
-            if k <= self.n:
-                d_sum_3 += (k - self.N + 1) * r_multiply_e(
-                    self.queries_stream.transition_matrices[0][k] + self.queries_stream.transition_matrices[1][k])
-
-        r_sum = np.dot(r_sum, d_sum_3)
-
-        for i in range(2, self.N):
+        for i in range(1, self.N):
             r_sum_temp = np.dot(stationary_probas[i],
                                 kron(kron(self.I_W,
                                           e_col(self.serv_stream.dim)),
-                                     e_col(np.sum([ncr(j + self.timer_stream.dim - 1,
-                                                       self.timer_stream.dim - 1) for j in range(i + 1)]))))
+                                     e_col(int((self.timer_stream.dim ** (i + 1) - 1) / (self.timer_stream.dim - 1)))))
+
             d_sum = (i - self.N) * r_multiply_e(self.queries_stream.matrD_0)
             for k in range(1, self.N - i + 1):
                 if k <= self.n:
                     d_sum += (k - self.N + i) * r_multiply_e(self.queries_stream.transition_matrices[0][k] +
                                                              self.queries_stream.transition_matrices[1][k])
-            r_sum += np.dot(r_sum_temp, d_sum)
+            p_loss += np.dot(r_sum_temp, d_sum)
 
-        p_loss += r_sum  # Final sum
         p_loss = 1 - (1 / self.queries_stream.avg_intensity) * p_loss[0][0]
 
         return p_loss
 
     def calc_query_lost_p(self, stationary_probas):
-        p_loss = np.dot(stationary_probas[0],
-                        np.array(np.bmat([[np.zeros((self.queries_stream.dim_, self.serv_stream.dim))],
+        p_loss = np.array(np.dot(stationary_probas[0],
+                                 np.bmat([[np.zeros((self.queries_stream.dim_,
+                                                     self.serv_stream.dim))],
                                           [kron(e_col(self.queries_stream.dim_),
-                                                self.I_M)]]),
-                                 dtype=float))  # checked
-        r_sum = np.dot(stationary_probas[1],
-                       kron(kron(e_col(self.queries_stream.dim_),
-                                 self.I_M),
-                            e_col(np.sum([ncr(j + self.timer_stream.dim - 1,
-                                              self.timer_stream.dim - 1) for j in range(2)]))))
-        for i in range(2, self.N + 1):
-            r_sum += np.dot(stationary_probas[i],
-                            kron(kron(e_col(self.queries_stream.dim_),
-                                      self.I_M),
-                                 e_col(np.sum([ncr(j + self.timer_stream.dim - 1,
-                                                   self.timer_stream.dim - 1) for j in range(i + 1)]))))
+                                                self.I_M)]])))
 
-        p_loss = p_loss + r_sum
+        for i in range(1, self.N):
+            p_loss += np.dot(stationary_probas[i],
+                             kron(kron(e_col(self.queries_stream.dim_),
+                                       self.I_M),
+                                  e_col(int((self.timer_stream.dim ** (i + 1) - 1) / (self.timer_stream.dim - 1)))))
+
         p_loss = np.dot(p_loss, self.serv_stream.repres_matr_0)
         p_loss = 1 - (1 / self.queries_stream.avg_intensity) * p_loss[0][0]
 
