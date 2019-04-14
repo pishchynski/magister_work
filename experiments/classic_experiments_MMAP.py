@@ -3,12 +3,10 @@ import datetime
 import matplotlib.pyplot as plt
 import numpy as np
 
+import classic.classic_two_priorities_qs as qs
 import experiments_data.MMAP_02_PH_PH as cor02
 import experiments_data.MMAP_04_PH_PH as cor04
-import experiments_data.MMAP_Poisson_NoRemoval as poisson_noremoval
 import experiments_data.MMAP_Poisson_PH_PH as poisson
-import experiments_data.MMAP_Poisson_PH_Poisson_NoRemoval as poisson_PH_poisson_noremoval
-import two_priorities_qs as qs
 
 
 def main():
@@ -21,17 +19,17 @@ def main():
     test_data_04_initial = cor04.Mmap04PhPh()
     test_data_04 = cor04.Mmap04PhPh()
 
-    test_data_Poisson_PH_poisson_noRemoval_initial = poisson_PH_poisson_noremoval.MmapPoissonPhPoissonNoRemoval()
-    test_data_Poisson_PH_poisson_noRemoval = poisson_PH_poisson_noremoval.MmapPoissonPhPoissonNoRemoval()
+    # test_data_Poisson_PH_poisson_noRemoval_initial = poisson_PH_poisson_noremoval.MmapPoissonPhPoissonNoRemoval()
+    # test_data_Poisson_PH_poisson_noRemoval = poisson_PH_poisson_noremoval.MmapPoissonPhPoissonNoRemoval()
+    #
+    # test_data_Poisson_noRemoval_initial = poisson_noremoval.MmapPoissonNoRemoval()
+    # test_data_Poisson_noRemoval = poisson_noremoval.MmapPoissonNoRemoval()
 
-    test_data_Poisson_noRemoval_initial = poisson_noremoval.MmapPoissonNoRemoval()
-    test_data_Poisson_noRemoval = poisson_noremoval.MmapPoissonNoRemoval()
-
-    qs1 = qs.TwoPrioritiesQueueingSystem(test_data_Poisson_initial)
-    qs2 = qs.TwoPrioritiesQueueingSystem(test_data_02_initial)
-    qs3 = qs.TwoPrioritiesQueueingSystem(test_data_04_initial)
-    qs4 = qs.TwoPrioritiesQueueingSystem(test_data_Poisson_PH_poisson_noRemoval_initial)
-    qs5 = qs.TwoPrioritiesQueueingSystem(test_data_Poisson_noRemoval_initial)
+    qs1 = qs.ClassicTwoPrioritiesQueueingSystem(test_data_Poisson_initial)
+    qs2 = qs.ClassicTwoPrioritiesQueueingSystem(test_data_02_initial)
+    qs3 = qs.ClassicTwoPrioritiesQueueingSystem(test_data_04_initial)
+    # qs4 = qs.ClassicTwoPrioritiesQueueingSystem(test_data_Poisson_PH_poisson_noRemoval_initial)
+    # qs5 = qs.ClassicTwoPrioritiesQueueingSystem(test_data_Poisson_noRemoval_initial)
 
     lambdas = {"poisson": [], "cor02": [], "cor04": [], "poisson_PH_poisson_NoRemoval": [], "poisson_NoRemoval": []}
     Ls = {"poisson": [], "cor02": [], "cor04": [], "poisson_PH_poisson_NoRemoval": [], "poisson_NoRemoval": []}
@@ -53,19 +51,19 @@ def main():
         # test_data_Poisson_noRemoval.test_matrD = test_data_Poisson_noRemoval_initial.test_matrD * coef
         # test_data_Poisson_noRemoval.test_matrD_0 = test_data_Poisson_noRemoval_initial.test_matrD_0 * coef
 
-        qs1 = qs.TwoPrioritiesQueueingSystem(test_data_Poisson)
+        qs1 = qs.ClassicTwoPrioritiesQueueingSystem(test_data_Poisson)
         stationary_probas1 = qs1.calc_stationary_probas(False)
 
-        qs2 = qs.TwoPrioritiesQueueingSystem(test_data_02)
+        qs2 = qs.ClassicTwoPrioritiesQueueingSystem(test_data_02)
         stationary_probas2 = qs2.calc_stationary_probas(False)
 
-        qs3 = qs.TwoPrioritiesQueueingSystem(test_data_04)
+        qs3 = qs.ClassicTwoPrioritiesQueueingSystem(test_data_04)
         stationary_probas3 = qs3.calc_stationary_probas(False)
 
-        # qs4 = qs.TwoPrioritiesQueueingSystem(test_data_Poisson_PH_poisson_noRemoval)
+        # qs4 = qs.ClassicTwoPrioritiesQueueingSystem(test_data_Poisson_PH_poisson_noRemoval)
         # stationary_probas4 = qs4.calc_stationary_probas(False)
         #
-        # qs5 = qs.TwoPrioritiesQueueingSystem(test_data_Poisson_noRemoval)
+        # qs5 = qs.ClassicTwoPrioritiesQueueingSystem(test_data_Poisson_noRemoval)
         # stationary_probas5 = qs5.calc_stationary_probas(False)
 
         lambdas["poisson"].append(qs1.queries_stream.avg_intensity)
@@ -114,7 +112,7 @@ def main():
                loc=0)
     plt.title('Зависимость L от λ при различных\n коэффициентах корреляции длин двух соседних интервалов')
 
-    plt.savefig(str.format("plots/MMAP_L_lambda_cor_0_02_04_NoRemoval_{}.png", datetime.datetime.now()),
+    plt.savefig(str.format("plots/classic_MMAP_L_lambda_cor_0_02_04_NoRemoval_{}.png", datetime.datetime.now()),
                 bbox_inches='tight')
     plt.close()
 
@@ -144,7 +142,7 @@ def main():
                loc=0)
     plt.title('Зависимость P_loss от λ при различных\n коэффициентах корреляции длин двух соседних интервалов')
 
-    plt.savefig(str.format("plots/MMAP_P_loss_lambda_cor_0_02_04_NoRemoval_{}.png", datetime.datetime.now()),
+    plt.savefig(str.format("plots/classic_MMAP_P_loss_lambda_cor_0_02_04_NoRemoval_{}.png", datetime.datetime.now()),
                 bbox_inches='tight')
     plt.close()
 

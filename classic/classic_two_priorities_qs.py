@@ -5,7 +5,7 @@ sys.path.append("../")
 from streams import *
 
 # import experiments_data.BMMAP3_04_PH_PH as test
-import experiments_data.MMAP_Poisson_PH_PH as test
+import experiments_data.MMAP_04_PH_PH as test
 
 np.set_printoptions(threshold=np.inf, suppress=True, formatter={'float': '{: 0.8f}'.format}, linewidth=75)
 
@@ -161,13 +161,13 @@ class ClassicTwoPrioritiesQueueingSystem:
 
             if k > 1:
                 temp_block = np.zeros((self.queries_stream.dim_,
-                                       self.queries_stream.dim_ * self.serv_stream.dim * self.timer_stream.dim * (
-                                               self.timer_stream.dim ** (k - 1) - 1) / (self.timer_stream.dim - 1)))
+                                       self.queries_stream.dim_ * self.serv_stream.dim * self.timer_stream.dim * int((
+                                               self.timer_stream.dim ** (k - 1) - 1) / (self.timer_stream.dim - 1))))
                 blocks0k.append(temp_block)
 
                 temp_block = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim,
-                                       self.queries_stream.dim_ * self.serv_stream.dim * self.timer_stream.dim * (
-                                               self.timer_stream.dim ** (k - 1) - 1) / (self.timer_stream.dim - 1)))
+                                       self.queries_stream.dim_ * self.serv_stream.dim * self.timer_stream.dim * int((
+                                               self.timer_stream.dim ** (k - 1) - 1) / (self.timer_stream.dim - 1))))
                 blocks1k.append(temp_block)
 
             if k + 1 > self.n:
@@ -240,13 +240,13 @@ class ClassicTwoPrioritiesQueueingSystem:
 
         if self.N > 1:
             temp_block = np.zeros((self.queries_stream.dim_,
-                                   self.queries_stream.dim_ * self.serv_stream.dim * self.timer_stream.dim * int(
-                                       (self.timer_stream.dim ** (self.N - 1) - 1) / (self.timer_stream.dim - 1))))
+                                   self.queries_stream.dim_ * self.serv_stream.dim * self.timer_stream.dim *
+                                       limdiv(self.timer_stream.dim ** (self.N - 1) - 1, self.timer_stream.dim - 1)))
             blocks0k.append(copy.deepcopy(temp_block))
 
             temp_block = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim,
-                                   self.queries_stream.dim_ * self.serv_stream.dim * self.timer_stream.dim * int(
-                                       (self.timer_stream.dim ** (self.N - 1) - 1) / (self.timer_stream.dim - 1))))
+                                   self.queries_stream.dim_ * self.serv_stream.dim * self.timer_stream.dim *
+                                       limdiv(self.timer_stream.dim ** (self.N - 1) - 1, self.timer_stream.dim - 1)))
             blocks1k.append(copy.deepcopy(temp_block))
 
         if self.N + 1 > self.n:
@@ -421,9 +421,9 @@ class ClassicTwoPrioritiesQueueingSystem:
                                                for j in range(i + 1)))
 
                     zero_matr = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim *
-                                          (self.timer_stream.dim ** (i + 1) - 1) / (self.timer_stream.dim - 1),
+                                          limdiv(self.timer_stream.dim ** (i + 1) - 1, self.timer_stream.dim - 1),
                                           self.queries_stream.dim_ * self.serv_stream.dim * self.timer_stream.dim ** (
-                                                  i + 1) * (self.timer_stream.dim ** k - 1) / (
+                                                  i + 1) * limdiv(self.timer_stream.dim ** k - 1,
                                                   self.timer_stream.dim - 1)
                                           ))
                     cur_matr = np.concatenate((cur_matr, zero_matr), axis=1)
@@ -435,9 +435,9 @@ class ClassicTwoPrioritiesQueueingSystem:
                 else:
 
                     zero_matr = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim *
-                                          (self.timer_stream.dim ** (i + 1) - 1) / (self.timer_stream.dim - 1),
+                                          limdiv(self.timer_stream.dim ** (i + 1) - 1, self.timer_stream.dim - 1),
                                           self.queries_stream.dim_ * self.serv_stream.dim * self.timer_stream.dim ** (
-                                                  i + 1) * (self.timer_stream.dim ** k - 1) / (
+                                                  i + 1) * limdiv(self.timer_stream.dim ** k - 1,
                                                   self.timer_stream.dim - 1)
                                           ))
 
@@ -449,9 +449,9 @@ class ClassicTwoPrioritiesQueueingSystem:
                                                 for j in range(i + 1)))
 
                 zero_matr = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim *
-                                      (self.timer_stream.dim ** (i + 1) - 1) / (self.timer_stream.dim - 1),
-                                      self.queries_stream.dim_ * self.serv_stream.dim * (
-                                              self.timer_stream.dim ** k - 1) / (self.timer_stream.dim - 1)
+                                      limdiv(self.timer_stream.dim ** (i + 1) - 1, self.timer_stream.dim - 1),
+                                      self.queries_stream.dim_ * self.serv_stream.dim * limdiv(
+                                              self.timer_stream.dim ** k - 1, self.timer_stream.dim - 1)
                                       ))
                 cur_matr += np.concatenate((zero_matr, temp_matr), axis=1)
 
@@ -486,28 +486,31 @@ class ClassicTwoPrioritiesQueueingSystem:
             cur_matr = la.block_diag(*(kron(matrD1_sum, np.eye(self.serv_stream.dim * (self.timer_stream.dim ** j)))
                                        for j in range(i + 1)))
 
-            zero_matr = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim * int(
-                (self.timer_stream.dim ** (i + 1) - 1) / (self.timer_stream.dim - 1)),
-                                  self.queries_stream.dim_ * self.serv_stream.dim * int(
-                                      (self.timer_stream.dim ** (i + 1)) * (
-                                              self.timer_stream.dim ** (self.N - i) - 1) / (
-                                              self.timer_stream.dim - 1))))
+            zero_matr = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim *
+                limdiv(self.timer_stream.dim ** (i + 1) - 1, self.timer_stream.dim - 1),
+                                  self.queries_stream.dim_ * self.serv_stream.dim *
+                                      (self.timer_stream.dim ** (i + 1)) * limdiv(
+                                              self.timer_stream.dim ** (self.N - i) - 1,
+                                              self.timer_stream.dim - 1)))
+
+            if cur_matr.shape[0] != zero_matr.shape[0]:
+                print("")
 
             cur_matr = np.concatenate((cur_matr, zero_matr), axis=1)
 
             temp_matr = la.block_diag(
                 *(kron(kron(matrD2_sum, np.eye(self.serv_stream.dim * self.timer_stream.dim ** j)),
-                       kronsumpow(self.timer_stream.repres_vect, self.N - i))
+                       kronpow(self.timer_stream.repres_vect, self.N - i))
                   for j in range(i + 1)))
 
-            zero_matr = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim * int((
+            zero_matr = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim * limdiv(
                                                                                                 self.timer_stream.dim ** (
-                                                                                                i + 1) - 1) / (
-                                                                                                self.timer_stream.dim - 1)),
-                                  self.queries_stream.dim_ * self.serv_stream.dim * int((
+                                                                                                i + 1) - 1,
+                                                                                                self.timer_stream.dim - 1),
+                                  self.queries_stream.dim_ * self.serv_stream.dim * limdiv(
                                                                                                 self.timer_stream.dim ** (
-                                                                                                self.N - i) - 1) / (
-                                                                                                self.timer_stream.dim - 1))))
+                                                                                                self.N - i) - 1,
+                                                                                                self.timer_stream.dim - 1)))
 
             cur_matr += np.concatenate((zero_matr, temp_matr), axis=1)
 
@@ -709,10 +712,10 @@ class ClassicTwoPrioritiesQueueingSystem:
 
     def calc_buffer_i_queries_j_nonprior(self, stationary_probas, i, j):
         mulW_M = self.queries_stream.dim_ * self.serv_stream.dim
-        block0_size = int(mulW_M * (self.timer_stream.dim ** j - 1) / (self.timer_stream.dim - 1))
+        block0_size = mulW_M * limdiv((self.timer_stream.dim ** j - 1), self.timer_stream.dim - 1)
         block1_size = int(mulW_M * (self.timer_stream.dim ** j))
-        block2_size = int(mulW_M * self.timer_stream.dim ** (j + 1) * (self.timer_stream.dim ** (i - j) - 1) / (
-                self.timer_stream.dim - 1))
+        block2_size = mulW_M * self.timer_stream.dim ** (j + 1) * limdiv(self.timer_stream.dim ** (i - j) - 1,
+                                                                         self.timer_stream.dim - 1)
         r_multiplier = np.array(np.bmat([[np.zeros((block0_size, 1))],
                                          [e_col(block1_size)],
                                          [np.zeros((block2_size, 1))]]),
@@ -771,7 +774,7 @@ class ClassicTwoPrioritiesQueueingSystem:
             r_sum_temp = np.dot(stationary_probas[i],
                                 kron(kron(self.I_W,
                                           e_col(self.serv_stream.dim)),
-                                     e_col(int((self.timer_stream.dim ** (i + 1) - 1) / (self.timer_stream.dim - 1)))))
+                                     e_col(limdiv(self.timer_stream.dim ** (i + 1) - 1, self.timer_stream.dim - 1))))
 
             d_sum = (i - self.N) * r_multiply_e(self.queries_stream.matrD_0)
             for k in range(1, self.N - i + 1):
@@ -795,7 +798,7 @@ class ClassicTwoPrioritiesQueueingSystem:
             p_loss += np.dot(stationary_probas[i],
                              kron(kron(e_col(self.queries_stream.dim_),
                                        self.I_M),
-                                  e_col(int((self.timer_stream.dim ** (i + 1) - 1) / (self.timer_stream.dim - 1)))))
+                                  e_col(limdiv(self.timer_stream.dim ** (i + 1) - 1, self.timer_stream.dim - 1))))
 
         p_loss = np.dot(p_loss, self.serv_stream.repres_matr_0)
         p_loss = 1 - (1 / self.queries_stream.avg_intensity) * p_loss[0][0]
@@ -839,7 +842,7 @@ class ClassicTwoPrioritiesQueueingSystem:
 
 
 if __name__ == '__main__':
-    test_data = test.MmapPoissonPhPh()
+    test_data = test.Mmap04PhPh()
 
     qs = ClassicTwoPrioritiesQueueingSystem(test_data, verbose=True)
     qs.queries_stream.print_characteristics()

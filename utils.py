@@ -7,6 +7,7 @@ from time import sleep
 
 import numpy as np
 import scipy.linalg as la
+import scipy.sparse.linalg as spla
 
 characteristics_loc = ["Загруженность системы",
                        "Пропускная способность системы",
@@ -139,6 +140,24 @@ def system_solve(matr):
     return result[0]
 
 
+def sparse_system_solve(sparse_matr):
+    """
+    Solves system of type (vect * matr = 0) & (vect * e = 1).
+    :param sparse_matr: scipy sparse array
+    :return: np.array with vect
+    """
+    matr_a = sparse_matr.copy()
+    for i in range(matr_a.shape[0]):
+        matr_a[i][0] = 1
+
+    matr_b = np.zeros((matr_a.shape[0], 1))
+    matr_b[0][0] = 1
+
+    result = spla.spsolve(matr_a, matr_b).transpose()
+
+    return result
+
+
 def r_multiply_e(matr):
     """
     Multiplies matrix matr on unitary vector of matching shape from the right: matr * e.
@@ -210,6 +229,21 @@ def ncr(n, r):
     numer = reduce(op.mul, range(n, n - r, -1), 1)
     denom = reduce(op.mul, range(1, r + 1), 1)
     return numer // denom
+
+
+def limdiv(numer, denom):
+    """
+    Divides more 'safely'. e.g. limdiv(0, 0) == 1
+
+    :param numer: int numerator
+    :param denom: int denominator
+    :return: int the result of division
+    """
+
+    if numer == denom == 0:
+        return 1
+    else:
+        return numer // denom
 
 
 def to_latex_table(elements):

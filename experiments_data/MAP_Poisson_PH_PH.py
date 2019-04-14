@@ -12,7 +12,7 @@ class MapPoissonPhPh:
 
         self.priority_part = 0.99999999999
 
-        self.test_N = 5
+        self.test_N = 2
         self.p_hp = 0.4
 
         # Server PH

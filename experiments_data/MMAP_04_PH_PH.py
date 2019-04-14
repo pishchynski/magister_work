@@ -15,7 +15,7 @@ class Mmap04PhPh:
 
         self.priority_part = 0.7
 
-        self.test_N = 2
+        self.test_N = 5
         self.p_hp = 0.4
 
         # Server PH

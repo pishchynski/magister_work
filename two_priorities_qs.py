@@ -5,7 +5,7 @@ from matr_E import get_matr_E
 sys.path.append("../")
 from streams import *
 from ramaswami import calc_ramaswami_matrices
-import experiments_data.BMMAP3_04_PH_PH as test
+import experiments_data.MMAP_04_PH_PH as test
 
 
 np.set_printoptions(threshold=np.inf, suppress=True, formatter={'float': '{: 0.8f}'.format}, linewidth=75)
@@ -63,6 +63,7 @@ class TwoPrioritiesQueueingSystem:
             print("\n=====END RAMASWAMI MATRICES=====\n")
 
         self.generator = None
+        self.sparse_generator = None
 
         self.recalculate_generator(verbose=verbose)
 
@@ -646,6 +647,7 @@ class TwoPrioritiesQueueingSystem:
         print("Finalizing generator")
 
         matrQ = [[None for _ in range(self.N + 1)] for _ in range(self.N + 1)]
+
         matrQ[0] = matrQ_0k
         for i in range(1, self.N + 1):
             matrQ[i][i] = matrQ_ii[i]
@@ -657,6 +659,13 @@ class TwoPrioritiesQueueingSystem:
                 matrQ[i][self.N] = matrQ_iN[i]
         self.generator = matrQ
         print("Generator finalized")
+        print("Creating sparse generator")
+
+        sparse_matrQ = [[None if matrQ[i][j] is None else sparse.csr_matrix(matrQ[i][j]) for j in range(self.N + 1)] for i in range(self.N + 1)]
+        self.sparse_generator = sparse.bmat(sparse_matrQ, "csr")
+
+        print("Sparse generator created")
+
 
     def _calc_matrG(self):
         print("Calculating G")
@@ -767,6 +776,10 @@ class TwoPrioritiesQueueingSystem:
             print("stationary probas calculated with error!\n", file=sys.stderr)
 
         return stationary_probas
+
+    def calc_stationary_probas_classic(self):
+        return system_solve(self.sparse_generator.toarray())
+
 
     def check_probas(self, stationary_probas):
         sum = 0.0
@@ -941,7 +954,7 @@ class TwoPrioritiesQueueingSystem:
 
 
 if __name__ == '__main__':
-    test_data = test.Bmmap304PhPh()
+    test_data = test.Mmap04PhPh()
 
     qs = TwoPrioritiesQueueingSystem(test_data, verbose=True)
     qs.queries_stream.print_characteristics()
@@ -949,3 +962,4 @@ if __name__ == '__main__':
     qs.timer_stream.print_characteristics(matrix_name='Г', vector_name='gamma')
     qs.print_generator()
     qs.calc_characteristics(True)
+    print(qs.calc_stationary_probas_classic())
