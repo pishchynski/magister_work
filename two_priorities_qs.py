@@ -1,11 +1,13 @@
 import sys
 
+import scipy.sparse as sparse
+
 from matr_E import get_matr_E
 
 sys.path.append("../")
 from streams import *
 from ramaswami import calc_ramaswami_matrices
-import experiments_data.MMAP_04_PH_PH as test
+import experiments_data.MMAP_02_PH_PH as test
 
 
 np.set_printoptions(threshold=np.inf, suppress=True, formatter={'float': '{: 0.8f}'.format}, linewidth=75)
@@ -778,8 +780,28 @@ class TwoPrioritiesQueueingSystem:
         return stationary_probas
 
     def calc_stationary_probas_classic(self):
-        return system_solve(self.sparse_generator.toarray())
+        print("Calculating probas via pure formula")
+        sol = system_solve(self.sparse_generator.toarray())
+        ps = [[sol[:self.queries_stream.dim_ * (self.serv_stream.dim + 1)]]]
+        prev = self.queries_stream.dim_ * (self.serv_stream.dim + 1)
+        for i in range(1, self.N + 1):
+            cur = self.queries_stream.dim_ * self.serv_stream.dim * np.sum((ncr(j + self.timer_stream.dim - 1,
+                                                                                self.timer_stream.dim - 1) for j in range(i + 1)))
+            ps.append([sol[prev: prev + cur]])
+            prev = prev + cur
 
+        if self.check_probas(ps):
+            print("stationary probas calculated\n")
+        else:
+            print("stationary probas calculated with error!\n", file=sys.stderr)
+
+        return ps
+
+    def check_by_Q_multiplying(self, stationary_probas):
+        print("Checking probas by Q multiplying.")
+        print("Should contain zeros only!")
+        ps = np.concatenate(stationary_probas, axis=1)
+        print(np.dot(ps, self.sparse_generator.toarray()))
 
     def check_probas(self, stationary_probas):
         sum = 0.0
@@ -917,6 +939,16 @@ class TwoPrioritiesQueueingSystem:
 
         return p_loss
 
+    def check_by_theta(self, stationary_probas):
+        sum = np.dot(stationary_probas[0], np.bmat([[self.I_W], [kron(self.I_W, e_col(self.serv_stream.dim))]]))
+
+        for i in range(1, self.N + 1):
+            sum += np.dot(stationary_probas[i],
+                          kron(kron(self.I_W,
+                                    e_col(self.serv_stream.dim)),
+                               e_col(np.sum([ncr(j + self.timer_stream.dim - 1, self.timer_stream.dim - 1) for j in range(i + 1)]))))
+        return sum
+
     def calc_characteristics(self, verbose=False):
         stationary_probas = self.calc_stationary_probas(verbose)
 
@@ -946,6 +978,11 @@ class TwoPrioritiesQueueingSystem:
         p_loss_alg = self.calc_query_lost_p_alg(stationary_probas)
         print("P_loss_alg =", p_loss_alg)
 
+        check_theta = self.check_by_theta(stationary_probas)
+        print("theta =", check_theta, " -- theta_true =", self.queries_stream.theta)
+
+        self.check_by_Q_multiplying(stationary_probas)
+
     def print_generator(self, as_latex=True):
         for row_num, block_row in enumerate(self.generator):
             print('Row', row_num)
@@ -954,7 +991,7 @@ class TwoPrioritiesQueueingSystem:
 
 
 if __name__ == '__main__':
-    test_data = test.Mmap04PhPh()
+    test_data = test.Mmap02PhPh()
 
     qs = TwoPrioritiesQueueingSystem(test_data, verbose=True)
     qs.queries_stream.print_characteristics()

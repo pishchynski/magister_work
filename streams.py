@@ -1,5 +1,5 @@
-import copy
 import sys
+
 from math import sqrt
 
 sys.path.append("../")
@@ -170,6 +170,8 @@ class BMMAPStream:
                     matr_print(matr, file=file)
             print()
 
+        print("theta =", self.theta)
+
         print('Average intensities:', file=file)
         for t, intensity in enumerate(self.avg_intensity_t):
             print('avg_intensity_' + str(t + 1) + ':', intensity, file=file)
@@ -235,6 +237,7 @@ class BMMAPStream:
                 matr_cal_D_k[t].append(temp_matr)
 
         theta = system_solve(self.matrD_1_)
+        self.theta = theta
 
         self.avg_intensity_t = []
 

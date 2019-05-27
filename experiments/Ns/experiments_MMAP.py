@@ -26,6 +26,7 @@ def main():
     Ls = {"poisson": [], "cor02": [], "cor04": [], "poisson_PH_poisson_NoRemoval": [], "poisson_NoRemoval": []}
     Ps = {"poisson": [], "cor02": [], "cor04": [], "poisson_PH_poisson_NoRemoval": [], "poisson_NoRemoval": []}
     p_0s = {"poisson": [], "cor02": [], "cor04": [], "poisson_PH_poisson_NoRemoval": [], "poisson_NoRemoval": []}
+    p_1s = {"poisson": [], "cor02": [], "cor04": [], "poisson_PH_poisson_NoRemoval": [], "poisson_NoRemoval": []}
 
     for newN in range(1, 25):
         test_data_Poisson.test_N = newN
@@ -47,17 +48,20 @@ def main():
         Ls["poisson"].append(qs1.calc_avg_buffer_queries_num(stationary_probas1))
         Ps["poisson"].append(qs1.calc_query_lost_p(stationary_probas1))
         p_0s["poisson"].append(qs1.calc_system_empty_proba(stationary_probas1))
+        p_1s["poisson"].append(qs1.calc_system_single_query_proba(stationary_probas1))
 
         Ns["cor02"].append(newN)
         Ls["cor02"].append(qs2.calc_avg_buffer_queries_num(stationary_probas2))
         Ps["cor02"].append(qs2.calc_query_lost_p(stationary_probas2))
         p_0s["cor02"].append(qs2.calc_system_empty_proba(stationary_probas2))
+        p_1s["cor02"].append(qs2.calc_system_single_query_proba(stationary_probas2))
 
 
         Ns["cor04"].append(newN)
         Ls["cor04"].append(qs3.calc_avg_buffer_queries_num(stationary_probas3))
         Ps["cor04"].append(qs3.calc_query_lost_p(stationary_probas3))
         p_0s["cor04"].append(qs3.calc_system_empty_proba(stationary_probas3))
+        p_1s["cor04"].append(qs3.calc_system_single_query_proba(stationary_probas3))
 
 
     plt.plot(Ns["poisson"], Ls["poisson"])
@@ -126,6 +130,29 @@ def main():
     plt.title('Зависимость p_0 от N при различных\n коэффициентах корреляции длин двух соседних интервалов')
 
     plt.savefig(str.format("plots/MMAP_p_0_N_cor_0_02_04_NoRemoval_{}.png", datetime.datetime.now()),
+                bbox_inches='tight')
+    plt.close()
+
+    plt.plot(Ns["poisson"], p_1s["poisson"])
+    plt.plot(Ns["cor02"], p_1s["cor02"])
+    plt.plot(Ns["cor04"], p_1s["cor04"])
+
+    plt.ylabel('p_1')
+    plt.xlabel('N')
+    plt.legend((str.format("c_cor^(1)={0}, c_cor^(2)={1}",
+                           round(qs1.queries_stream.c_cor[0], 3),
+                           round(qs1.queries_stream.c_cor[1], 3)),
+                str.format("c_cor^(1)={0}, c_cor^(2)={1}",
+                           round(qs2.queries_stream.c_cor[0], 3),
+                           round(qs2.queries_stream.c_cor[1], 3)),
+                str.format("c_cor^(1)={0}, c_cor^(2)={1}",
+                           round(qs3.queries_stream.c_cor[0], 3),
+                           round(qs3.queries_stream.c_cor[1], 3)),
+                ),
+               loc=0)
+    plt.title('Зависимость p_1 от N при различных\n коэффициентах корреляции длин двух соседних интервалов')
+
+    plt.savefig(str.format("plots/MMAP_p_1_N_cor_0_02_04_NoRemoval_{}.png", datetime.datetime.now()),
                 bbox_inches='tight')
     plt.close()
 

@@ -5,9 +5,7 @@ import numpy as np
 
 import experiments_data.MMAP_02_PH_PH as cor02
 import experiments_data.MMAP_04_PH_PH as cor04
-import experiments_data.MMAP_Poisson_NoRemoval as poisson_noremoval
 import experiments_data.MMAP_Poisson_PH_PH as poisson
-import experiments_data.MMAP_Poisson_PH_Poisson_NoRemoval as poisson_PH_poisson_noremoval
 import two_priorities_qs as qs
 
 
@@ -21,17 +19,17 @@ def main():
     test_data_04_initial = cor04.Mmap04PhPh()
     test_data_04 = cor04.Mmap04PhPh()
 
-    test_data_Poisson_PH_poisson_noRemoval_initial = poisson_PH_poisson_noremoval.MmapPoissonPhPoissonNoRemoval()
-    test_data_Poisson_PH_poisson_noRemoval = poisson_PH_poisson_noremoval.MmapPoissonPhPoissonNoRemoval()
-
-    test_data_Poisson_noRemoval_initial = poisson_noremoval.MmapPoissonNoRemoval()
-    test_data_Poisson_noRemoval = poisson_noremoval.MmapPoissonNoRemoval()
+    # test_data_Poisson_PH_poisson_noRemoval_initial = poisson_PH_poisson_noremoval.MmapPoissonPhPoissonNoRemoval()
+    # test_data_Poisson_PH_poisson_noRemoval = poisson_PH_poisson_noremoval.MmapPoissonPhPoissonNoRemoval()
+    #
+    # test_data_Poisson_noRemoval_initial = poisson_noremoval.MmapPoissonNoRemoval()
+    # test_data_Poisson_noRemoval = poisson_noremoval.MmapPoissonNoRemoval()
 
     qs1 = qs.TwoPrioritiesQueueingSystem(test_data_Poisson_initial)
     qs2 = qs.TwoPrioritiesQueueingSystem(test_data_02_initial)
     qs3 = qs.TwoPrioritiesQueueingSystem(test_data_04_initial)
-    qs4 = qs.TwoPrioritiesQueueingSystem(test_data_Poisson_PH_poisson_noRemoval_initial)
-    qs5 = qs.TwoPrioritiesQueueingSystem(test_data_Poisson_noRemoval_initial)
+    # qs4 = qs.TwoPrioritiesQueueingSystem(test_data_Poisson_PH_poisson_noRemoval_initial)
+    # qs5 = qs.TwoPrioritiesQueueingSystem(test_data_Poisson_noRemoval_initial)
 
     lambdas = {"poisson": [], "cor02": [], "cor04": [], "poisson_PH_poisson_NoRemoval": [], "poisson_NoRemoval": []}
     Ls = {"poisson": [], "cor02": [], "cor04": [], "poisson_PH_poisson_NoRemoval": [], "poisson_NoRemoval": []}

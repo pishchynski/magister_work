@@ -1,11 +1,13 @@
 import sys
 
+import scipy.sparse as sparse
+
 sys.path.append("../")
 
 from streams import *
 
 # import experiments_data.BMMAP3_04_PH_PH as test
-import experiments_data.MMAP_04_PH_PH as test
+import experiments_data.MMAP_Poisson as test
 
 np.set_printoptions(threshold=np.inf, suppress=True, formatter={'float': '{: 0.8f}'.format}, linewidth=75)
 
@@ -48,6 +50,7 @@ class ClassicTwoPrioritiesQueueingSystem:
         self.N = experiment_data.test_N  # buffer capacity
 
         self.generator = None
+        self.sparse_generator = None
 
         self.recalculate_generator(verbose=verbose)
 
@@ -575,6 +578,13 @@ class ClassicTwoPrioritiesQueueingSystem:
                 matrQ[i][self.N] = matrQ_iN[i]
         self.generator = matrQ
         print("Generator finalized")
+        print("Creating sparse generator")
+
+        sparse_matrQ = [[None if matrQ[i][j] is None else sparse.csr_matrix(matrQ[i][j]) for j in range(self.N + 1)] for
+                        i in range(self.N + 1)]
+        self.sparse_generator = sparse.bmat(sparse_matrQ, "csr")
+
+        print("Sparse generator created")
 
     def _calc_matrG(self):
         print("Calculating G")
@@ -686,6 +696,24 @@ class ClassicTwoPrioritiesQueueingSystem:
 
         return stationary_probas
 
+    def calc_stationary_probas_classic(self):
+        print("Calculating probas via pure formula")
+        sol = system_solve(self.sparse_generator.toarray())
+        ps = [[sol[:self.queries_stream.dim_ * (self.serv_stream.dim + 1)]]]
+        prev = self.queries_stream.dim_ * (self.serv_stream.dim + 1)
+        for i in range(1, self.N + 1):
+            cur = self.queries_stream.dim_ * self.serv_stream.dim * np.sum((ncr(j + self.timer_stream.dim - 1,
+                                                                                self.timer_stream.dim - 1) for j in range(i + 1)))
+            ps.append([sol[prev: prev + cur]])
+            prev = prev + cur
+
+        if self.check_probas(ps):
+            print("stationary probas calculated\n")
+        else:
+            print("stationary probas calculated with error!\n", file=sys.stderr)
+
+        return ps
+
     def check_probas(self, stationary_probas):
         sum = 0.0
         for num, proba in enumerate(stationary_probas):
@@ -712,10 +740,10 @@ class ClassicTwoPrioritiesQueueingSystem:
 
     def calc_buffer_i_queries_j_nonprior(self, stationary_probas, i, j):
         mulW_M = self.queries_stream.dim_ * self.serv_stream.dim
-        block0_size = mulW_M * limdiv((self.timer_stream.dim ** j - 1), self.timer_stream.dim - 1)
+        block0_size = mulW_M * limdiv((self.timer_stream.dim ** j - 1), self.timer_stream.dim - 1) if j > 0 else 0
         block1_size = int(mulW_M * (self.timer_stream.dim ** j))
         block2_size = mulW_M * self.timer_stream.dim ** (j + 1) * limdiv(self.timer_stream.dim ** (i - j) - 1,
-                                                                         self.timer_stream.dim - 1)
+                                                                         self.timer_stream.dim - 1) if j < i else 0
         r_multiplier = np.array(np.bmat([[np.zeros((block0_size, 1))],
                                          [e_col(block1_size)],
                                          [np.zeros((block2_size, 1))]]),
@@ -805,8 +833,25 @@ class ClassicTwoPrioritiesQueueingSystem:
 
         return p_loss
 
+    def check_by_theta(self, stationary_probas):
+        sum = np.dot(stationary_probas[0], np.bmat([[self.I_W], [kron(self.I_W, e_col(self.serv_stream.dim))]]))
+
+        for i in range(1, self.N + 1):
+            sum += np.dot(stationary_probas[i],
+                          kron(kron(self.I_W,
+                                    e_col(self.serv_stream.dim)),
+                               e_col(np.sum([self.serv_stream.dim ** j for j in range(i + 1)]))))
+        return sum
+
+    def check_by_Q_multiplying(self, stationary_probas):
+        print("Checking probas by Q multiplying.")
+        print("Should contain zeros only!")
+        ps = np.concatenate(stationary_probas, axis=1)
+        print(np.dot(ps, self.sparse_generator.toarray()))
+
     def calc_characteristics(self, verbose=False):
         stationary_probas = self.calc_stationary_probas(verbose)
+        # stationary_probas = self.calc_stationary_probas_classic()
 
         system_empty_proba = self.calc_system_empty_proba(stationary_probas)
         if verbose:
@@ -834,6 +879,11 @@ class ClassicTwoPrioritiesQueueingSystem:
         p_loss_alg = self.calc_query_lost_p_alg(stationary_probas)
         print("P_loss_alg =", p_loss_alg)
 
+        check_theta = self.check_by_theta(stationary_probas)
+        print("theta =", check_theta, " -- theta_true =", self.queries_stream.theta)
+
+        self.check_by_Q_multiplying(stationary_probas)
+
     def print_generator(self, as_latex=True):
         for row_num, block_row in enumerate(self.generator):
             print('Row', row_num)
@@ -842,7 +892,7 @@ class ClassicTwoPrioritiesQueueingSystem:
 
 
 if __name__ == '__main__':
-    test_data = test.Mmap04PhPh()
+    test_data = test.MmapPoisson()
 
     qs = ClassicTwoPrioritiesQueueingSystem(test_data, verbose=True)
     qs.queries_stream.print_characteristics()
@@ -850,3 +900,5 @@ if __name__ == '__main__':
     qs.timer_stream.print_characteristics(matrix_name='Г', vector_name='gamma')
     qs.print_generator()
     qs.calc_characteristics(True)
+    ps_classic = qs.calc_stationary_probas_classic()
+    print("theta =", qs.check_by_theta(ps_classic), " -- theta_true =", qs.queries_stream.theta)
