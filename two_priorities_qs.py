@@ -7,8 +7,7 @@ from matr_E import get_matr_E
 sys.path.append("../")
 from streams import *
 from ramaswami import calc_ramaswami_matrices
-import experiments_data.MMAP_02_PH_PH as test
-
+import experiments_data.MMAP_04_PH_PH as test
 
 np.set_printoptions(threshold=np.inf, suppress=True, formatter={'float': '{: 0.8f}'.format}, linewidth=75)
 
@@ -50,6 +49,19 @@ class TwoPrioritiesQueueingSystem:
         self.n = experiment_data.test_n  # number of D_i matrices
         self.N = experiment_data.test_N  # buffer capacity
         self.ramatrL, self.ramatrA, self.ramatrP = self._calc_ramaswami_matrices(0, self.N)
+        self.calI_1 = [np.array(np.bmat([[kron(kron(self.I_W,
+                                                    e_col(self.serv_stream.dim)),
+                                               e_col(ncr(self.timer_stream.dim - 1 + j,
+                                                         self.timer_stream.dim - 1)))] for j in range(i + 1)]),
+                                dtype=float) for i in
+                       range(self.N + 1)]
+        self.calI_2 = [np.array(np.bmat([[kron(kron(e_col(self.queries_stream.dim_),
+                                                    self.I_M),
+                                               e_col(ncr(self.timer_stream.dim - 1 + j,
+                                                         self.timer_stream.dim - 1)))] for j in range(i + 1)]),
+                                dtype=float) for i in
+                       range(self.N + 1)]
+        self.calI_L = None  # todo: implement to calculate waiting time!
 
         if verbose:
             print("\n=====RAMASWAMI MATRICES=====\n")
@@ -663,11 +675,11 @@ class TwoPrioritiesQueueingSystem:
         print("Generator finalized")
         print("Creating sparse generator")
 
-        sparse_matrQ = [[None if matrQ[i][j] is None else sparse.csr_matrix(matrQ[i][j]) for j in range(self.N + 1)] for i in range(self.N + 1)]
+        sparse_matrQ = [[None if matrQ[i][j] is None else sparse.csr_matrix(matrQ[i][j]) for j in range(self.N + 1)] for
+                        i in range(self.N + 1)]
         self.sparse_generator = sparse.bmat(sparse_matrQ, "csr")
 
         print("Sparse generator created")
-
 
     def _calc_matrG(self):
         print("Calculating G")
@@ -786,7 +798,8 @@ class TwoPrioritiesQueueingSystem:
         prev = self.queries_stream.dim_ * (self.serv_stream.dim + 1)
         for i in range(1, self.N + 1):
             cur = self.queries_stream.dim_ * self.serv_stream.dim * np.sum((ncr(j + self.timer_stream.dim - 1,
-                                                                                self.timer_stream.dim - 1) for j in range(i + 1)))
+                                                                                self.timer_stream.dim - 1) for j in
+                                                                            range(i + 1)))
             ps.append([sol[prev: prev + cur]])
             prev = prev + cur
 
@@ -853,7 +866,7 @@ class TwoPrioritiesQueueingSystem:
             [np.sum([j * self.calc_buffer_i_queries_j_nonprior(stationary_probas, i, j) for j in range(1, i + 1)]) for i
              in range(1, self.N + 1)])
 
-    def calc_query_lost_p_alg(self, stationary_probas):
+    def deprecated_calc_query_lost_p_alg(self, stationary_probas):
         p_loss = np.dot(stationary_probas[0],
                         np.array(np.bmat([[self.I_W],
                                           [kron(self.O_W,
@@ -910,12 +923,12 @@ class TwoPrioritiesQueueingSystem:
                                                              self.queries_stream.transition_matrices[1][k])
             r_sum += np.dot(r_sum_temp, d_sum)
 
-        p_loss += r_sum         # Final sum
+        p_loss += r_sum  # Final sum
         p_loss = 1 - (1 / self.queries_stream.avg_intensity) * p_loss[0][0]
 
         return p_loss
 
-    def calc_query_lost_p(self, stationary_probas):
+    def deprecated_calc_query_lost_p(self, stationary_probas):
         p_loss = np.dot(stationary_probas[0],
                         np.array(np.bmat([[np.zeros((self.queries_stream.dim_, self.serv_stream.dim))],
                                           [kron(e_col(self.queries_stream.dim_),
@@ -939,14 +952,88 @@ class TwoPrioritiesQueueingSystem:
 
         return p_loss
 
+    def deprecated_calc_query_lost_p(self, stationary_probas):
+        p_loss = np.dot(stationary_probas[0],
+                        np.array(np.bmat([[np.zeros((self.queries_stream.dim_, self.serv_stream.dim))],
+                                          [kron(e_col(self.queries_stream.dim_),
+                                                self.I_M)]]),
+                                 dtype=float))  # checked
+        r_sum = np.dot(stationary_probas[1],
+                       kron(kron(e_col(self.queries_stream.dim_),
+                                 self.I_M),
+                            e_col(np.sum([ncr(j + self.timer_stream.dim - 1,
+                                              self.timer_stream.dim - 1) for j in range(2)]))))
+        for i in range(2, self.N + 1):
+            r_sum += np.dot(stationary_probas[i],
+                            kron(kron(e_col(self.queries_stream.dim_),
+                                      self.I_M),
+                                 e_col(np.sum([ncr(j + self.timer_stream.dim - 1,
+                                                   self.timer_stream.dim - 1) for j in range(i + 1)]))))
+
+        p_loss = p_loss + r_sum
+        p_loss = np.dot(p_loss, self.serv_stream.repres_matr_0)
+        p_loss = 1 - (1 / self.queries_stream.avg_intensity) * p_loss[0][0]
+
+        return p_loss
+
+    def calc_query_lost_p(self, stationary_probas):
+        p_loss = np.dot(stationary_probas[0],
+                        np.array(np.bmat([[np.zeros((self.queries_stream.dim_, self.serv_stream.dim))],
+                                          [kron(e_col(self.queries_stream.dim_),
+                                                self.I_M)]]),
+                                 dtype=float))  # checked
+        r_sum = np.dot(stationary_probas[1],
+                       self.calI_2[1])
+        for i in range(2, self.N + 1):
+            r_sum += np.dot(stationary_probas[i],
+                            self.calI_2[i])
+
+        p_loss = p_loss + r_sum
+        p_loss = np.dot(p_loss, self.serv_stream.repres_matr_0)
+        p_loss = 1 - (1 / self.queries_stream.avg_intensity) * p_loss[0][0]
+
+        return p_loss
+
+    def calc_prior_query_lost_ps_buffer_full(self, stationary_probas):
+        P_losses = [None]
+        for i in range(1, 3):
+            l_sum = (- self.N - 1) * r_multiply_e(self.queries_stream.transition_matrices[i][0])
+            for k in range(1, self.N + 2):
+                l_sum += (k - self.N - 1) * r_multiply_e(self.queries_stream.transition_matrices[i][k])
+
+            l_sum = np.dot(np.array(np.dot(stationary_probas[0],
+                                           np.bmat([[self.I_W],
+                                                    [kron(self.O_W,
+                                                          e_col(self.serv_stream.dim))]])),
+                                    dtype=float),
+                           l_sum)
+
+            c_sum = (- self.N) * r_multiply_e(self.queries_stream.transition_matrices[i][0])
+            for k in range(1, self.N + 1):
+                c_sum += (k - self.N) * r_multiply_e(self.queries_stream.transition_matrices[i][k])
+
+            c_sum = np.dot(np.array(np.dot(stationary_probas[0],
+                                           np.bmat([[self.O_W],
+                                                    [kron(self.I_W,
+                                                          e_col(self.serv_stream.dim))]])),
+                                    dtype=float),
+                           c_sum)
+            p_loss = l_sum + c_sum
+            if self.N > 1:
+                r_sum_1 = np.dot(stationary_probas[1],
+                                 self.calI_1[1])
+
+
+
     def check_by_theta(self, stationary_probas):
         sum = np.dot(stationary_probas[0], np.bmat([[self.I_W], [kron(self.I_W, e_col(self.serv_stream.dim))]]))
 
         for i in range(1, self.N + 1):
             sum += np.dot(stationary_probas[i],
-                          kron(kron(self.I_W,
-                                    e_col(self.serv_stream.dim)),
-                               e_col(np.sum([ncr(j + self.timer_stream.dim - 1, self.timer_stream.dim - 1) for j in range(i + 1)]))))
+                          np.bmat([[kron(kron(self.I_W,
+                                              e_col(self.serv_stream.dim)),
+                                         e_col(ncr(self.timer_stream.dim - 1 + j,
+                                                   self.timer_stream.dim - 1)))] for j in range(i + 1)]))
         return sum
 
     def calc_characteristics(self, verbose=False):
@@ -975,8 +1062,8 @@ class TwoPrioritiesQueueingSystem:
         if verbose:
             print("P_loss =", p_loss)
 
-        p_loss_alg = self.calc_query_lost_p_alg(stationary_probas)
-        print("P_loss_alg =", p_loss_alg)
+        # p_loss_alg = self.calc_query_lost_p_alg(stationary_probas)
+        # print("P_loss_alg =", p_loss_alg)
 
         check_theta = self.check_by_theta(stationary_probas)
         print("theta =", check_theta, " -- theta_true =", self.queries_stream.theta)
@@ -991,7 +1078,7 @@ class TwoPrioritiesQueueingSystem:
 
 
 if __name__ == '__main__':
-    test_data = test.Mmap02PhPh()
+    test_data = test.Mmap04PhPh()
 
     qs = TwoPrioritiesQueueingSystem(test_data, verbose=True)
     qs.queries_stream.print_characteristics()
