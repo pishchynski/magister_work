@@ -200,6 +200,7 @@ class BMMAPStream:
         self.q = q
         self.transition_matrices = [[] for _ in range(t_num)]
         self.matrD_0 = np.array(matrD_0, dtype=float)
+        matrD_0s = [priority_part * self.matrD_0, (1. - priority_part) * self.matrD_0]
         matrD_t = [priority_part * np.array(matrD, dtype=float), (1.0 - priority_part) * np.array(matrD, dtype=float)]
         # matrD_t = [0.99999999999 * np.array(matrD, dtype=float), 0.00000000001 * np.array(matrD, dtype=float)]
         # matrD_t = [0.0000000000000001 * np.array(matrD), 0.9999999999999999 * np.array(matrD)]
@@ -265,7 +266,7 @@ class BMMAPStream:
                       zip(matr_cal_D_k, matr_hat_D_k, self.batch_intensity_t, dispersion_t)]
 
         for t in range(t_num):
-            self.transition_matrices[t] = [None] + self.transition_matrices[t]
+            self.transition_matrices[t] = [matrD_0s[t]] + self.transition_matrices[t]
 
 
 class PHStream:

@@ -1,5 +1,3 @@
-import copy
-
 from utils import *
 
 
@@ -49,6 +47,8 @@ def get_matr_LzNT(matr_T: np.ndarray, N: int):
         if w != 0:
             for z in range(N):
                 matr_L[z] = matr_Lz[z]
+        if N == 0:
+            matr_L = np.array([[0.]])
 
     return matr_L
 

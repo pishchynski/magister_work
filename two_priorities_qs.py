@@ -7,7 +7,7 @@ from matr_E import get_matr_E
 sys.path.append("../")
 from streams import *
 from ramaswami import calc_ramaswami_matrices
-import experiments_data.MMAP_04_PH_PH as test
+import experiments_data.MMAP_02_PH_PH as test
 
 np.set_printoptions(threshold=np.inf, suppress=True, formatter={'float': '{: 0.8f}'.format}, linewidth=75)
 
@@ -42,6 +42,8 @@ class TwoPrioritiesQueueingSystem:
 
         self.O_W = np.zeros((self.queries_stream.dim_, self.queries_stream.dim_))
 
+        self.e_WM = e_col(self.queries_stream.dim_ * self.serv_stream.dim)
+
         self.S_0xBeta = np.dot(self.serv_stream.repres_matr_0,
                                self.serv_stream.repres_vect)
 
@@ -61,7 +63,10 @@ class TwoPrioritiesQueueingSystem:
                                                          self.timer_stream.dim - 1)))] for j in range(i + 1)]),
                                 dtype=float) for i in
                        range(self.N + 1)]
-        self.calI_L = None  # todo: implement to calculate waiting time!
+        # self.calI_L = [None] + [np.array(np.bmat([[kron(self.e_WM,
+        #                                        r_multiply_e(self.ramatrL[self.N - i + j][self.N - i]))]
+        #                                  for j in range(i + 1)]))
+        #                for i in range(1, self.N + 1)]
 
         if verbose:
             print("\n=====RAMASWAMI MATRICES=====\n")
@@ -994,12 +999,14 @@ class TwoPrioritiesQueueingSystem:
 
         return p_loss
 
-    def calc_prior_query_lost_ps_buffer_full(self, stationary_probas):
-        P_losses = [None]
-        for i in range(1, 3):
+    def calc_query_lost_ps_buffer_full(self, stationary_probas):
+        P_losses = []
+        p_loss_alg = 0
+        for i in range(2):
             l_sum = (- self.N - 1) * r_multiply_e(self.queries_stream.transition_matrices[i][0])
-            for k in range(1, self.N + 2):
-                l_sum += (k - self.N - 1) * r_multiply_e(self.queries_stream.transition_matrices[i][k])
+            for k in range(1, self.N + 2): # todo: check
+                if k <= self.n:
+                    l_sum += (k - self.N - 1) * r_multiply_e(self.queries_stream.transition_matrices[i][k])
 
             l_sum = np.dot(np.array(np.dot(stationary_probas[0],
                                            np.bmat([[self.I_W],
@@ -1010,7 +1017,8 @@ class TwoPrioritiesQueueingSystem:
 
             c_sum = (- self.N) * r_multiply_e(self.queries_stream.transition_matrices[i][0])
             for k in range(1, self.N + 1):
-                c_sum += (k - self.N) * r_multiply_e(self.queries_stream.transition_matrices[i][k])
+                if k <= self.n:
+                    c_sum += (k - self.N) * r_multiply_e(self.queries_stream.transition_matrices[i][k])
 
             c_sum = np.dot(np.array(np.dot(stationary_probas[0],
                                            np.bmat([[self.O_W],
@@ -1022,8 +1030,39 @@ class TwoPrioritiesQueueingSystem:
             if self.N > 1:
                 r_sum_1 = np.dot(stationary_probas[1],
                                  self.calI_1[1])
+                r_sum_2 = (- self.N + 1) * r_multiply_e(self.queries_stream.transition_matrices[i][0])
+                for k in range(1, self.N):
+                    if k <= self.n:
+                        r_sum_2 += (k - self.N + 1) * r_multiply_e(self.queries_stream.transition_matrices[i][k])
 
+                r_sum_full = np.dot(r_sum_1, r_sum_2)
 
+                for j in range(2, self.N):
+                    r_sum_1 = np.dot(stationary_probas[j],
+                                     self.calI_1[j])
+                    r_sum_2 = (- self.N + j) * r_multiply_e(self.queries_stream.transition_matrices[i][0])
+                    for k in range(1, self.N):
+                        if k <= self.n:
+                            r_sum_2 += (k - self.N + j) * r_multiply_e(self.queries_stream.transition_matrices[i][k])
+
+                    r_sum_full += np.dot(r_sum_1, r_sum_2)
+
+                p_loss += r_sum_full
+                p_loss_alg += p_loss[0][0]
+
+            P_losses.append(1 - (1 / self.queries_stream.avg_intensity_t[i]) * p_loss[0][0])
+
+        p_loss_alg = 1 - (1 / self.queries_stream.avg_intensity) * p_loss_alg
+
+        return P_losses, p_loss_alg
+
+    def calc_nonprior_query_lost_timer(self, stationary_probas):
+        p_loss = np.dot(stationary_probas[1],
+                        self.calI_L[1])
+        for i in range(2, self.N + 1):
+            p_loss += np.dot(stationary_probas[i],
+                             self.calI_L[i])
+        return (self.p_hp / self.queries_stream.avg_intensity_t[1]) * p_loss[0][0]
 
     def check_by_theta(self, stationary_probas):
         sum = np.dot(stationary_probas[0], np.bmat([[self.I_W], [kron(self.I_W, e_col(self.serv_stream.dim))]]))
@@ -1062,6 +1101,15 @@ class TwoPrioritiesQueueingSystem:
         if verbose:
             print("P_loss =", p_loss)
 
+        p_losses, p_loss_alg = self.calc_query_lost_ps_buffer_full(stationary_probas)
+        if verbose:
+            print("P_losses =", p_losses)
+            print("P_loss_alg =", p_loss_alg)
+
+        # p_nonprior_loss_timer = self.calc_nonprior_query_lost_timer(stationary_probas)
+        # if verbose:
+        #     print("P_loss_imp =", p_nonprior_loss_timer)
+
         # p_loss_alg = self.calc_query_lost_p_alg(stationary_probas)
         # print("P_loss_alg =", p_loss_alg)
 
@@ -1078,7 +1126,7 @@ class TwoPrioritiesQueueingSystem:
 
 
 if __name__ == '__main__':
-    test_data = test.Mmap04PhPh()
+    test_data = test.Mmap02PhPh()
 
     qs = TwoPrioritiesQueueingSystem(test_data, verbose=True)
     qs.queries_stream.print_characteristics()
