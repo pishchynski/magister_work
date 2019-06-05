@@ -5,6 +5,7 @@ from functools import reduce
 from sys import stderr
 from time import sleep
 
+import math
 import numpy as np
 import scipy.linalg as la
 import scipy.sparse.linalg as spla
@@ -256,3 +257,33 @@ def to_latex_table(elements):
             latex_table += '&\\\\\n'
 
     return latex_table
+
+
+def m_exp(matr, t):
+    """
+    Calculates matrix exponential with the use of series and uniformization.
+    e^(matr * t)
+
+    :param matr:
+    :param t:
+    :return:
+    """
+
+    v = -matr[0][0]
+    for i in range(1, matr.shape[0]):
+        if v > -matr[i][i]:
+            v= -matr[i][i]
+
+    matrPhi = (1 / v) * matr + np.eye(matr.shape[0])
+
+    eps = 10 ** (-5)
+
+    elem = 1.
+    sum = 0.
+    n = 0
+    while abs(elem) >= eps:
+        elem = (math.exp(-v * t) * ((v * t) ** n) / math.factorial(n)) * np.linalg.matrix_power(matrPhi, n)
+        sum += elem
+        n += 1
+
+    return sum

@@ -63,10 +63,11 @@ class TwoPrioritiesQueueingSystem:
                                                          self.timer_stream.dim - 1)))] for j in range(i + 1)]),
                                 dtype=float) for i in
                        range(self.N + 1)]
-        # self.calI_L = [None] + [np.array(np.bmat([[kron(self.e_WM,
-        #                                        r_multiply_e(self.ramatrL[self.N - i + j][self.N - i]))]
-        #                                  for j in range(i + 1)]))
-        #                for i in range(1, self.N + 1)]
+        self.calI_L = [None] + [np.array(np.bmat([[kron(self.e_WM,
+                                                        r_multiply_e(self.ramatrL[self.N - i + j][
+                                                                         self.N - i]) if j != 0 else np.array([[0]]))]
+                                                  for j in range(i + 1)]))
+                                for i in range(1, self.N + 1)]
 
         if verbose:
             print("\n=====RAMASWAMI MATRICES=====\n")
@@ -1004,7 +1005,7 @@ class TwoPrioritiesQueueingSystem:
         p_loss_alg = 0
         for i in range(2):
             l_sum = (- self.N - 1) * r_multiply_e(self.queries_stream.transition_matrices[i][0])
-            for k in range(1, self.N + 2): # todo: check
+            for k in range(1, self.N + 2):
                 if k <= self.n:
                     l_sum += (k - self.N - 1) * r_multiply_e(self.queries_stream.transition_matrices[i][k])
 
@@ -1106,9 +1107,9 @@ class TwoPrioritiesQueueingSystem:
             print("P_losses =", p_losses)
             print("P_loss_alg =", p_loss_alg)
 
-        # p_nonprior_loss_timer = self.calc_nonprior_query_lost_timer(stationary_probas)
-        # if verbose:
-        #     print("P_loss_imp =", p_nonprior_loss_timer)
+        p_loss_imp = self.calc_nonprior_query_lost_timer(stationary_probas)
+        if verbose:
+            print("P_loss_imp =", p_loss_imp)
 
         # p_loss_alg = self.calc_query_lost_p_alg(stationary_probas)
         # print("P_loss_alg =", p_loss_alg)

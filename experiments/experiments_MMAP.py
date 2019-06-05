@@ -29,6 +29,7 @@ def main():
     Ps_alg = {"poisson": [], "cor02": [], "cor04": [], "poisson_PH_poisson_NoRemoval": [], "poisson_NoRemoval": []}
     P1s = {"poisson": [], "cor02": [], "cor04": [], "poisson_PH_poisson_NoRemoval": [], "poisson_NoRemoval": []}
     P2s = {"poisson": [], "cor02": [], "cor04": [], "poisson_PH_poisson_NoRemoval": [], "poisson_NoRemoval": []}
+    Ps_imp = {"poisson": [], "cor02": [], "cor04": [], "poisson_PH_poisson_NoRemoval": [], "poisson_NoRemoval": []}
 
     for coef in np.linspace(0.01, 3, 100):
         test_data_Poisson.test_matrD = test_data_Poisson_initial.test_matrD * coef
@@ -55,6 +56,7 @@ def main():
         Ps_alg["poisson"].append(qs1.calc_query_lost_ps_buffer_full(stationary_probas1)[1])
         P1s["poisson"].append(qs1.calc_query_lost_ps_buffer_full(stationary_probas1)[0][0])
         P2s["poisson"].append(qs1.calc_query_lost_ps_buffer_full(stationary_probas1)[0][1])
+        Ps_imp["poisson"].append(qs1.calc_nonprior_query_lost_timer(stationary_probas1))
 
         lambdas["cor02"].append(qs2.queries_stream.avg_intensity)
         Ls["cor02"].append(qs2.calc_avg_buffer_queries_num(stationary_probas2))
@@ -62,6 +64,7 @@ def main():
         Ps_alg["cor02"].append(qs2.calc_query_lost_ps_buffer_full(stationary_probas2)[1])
         P1s["cor02"].append(qs2.calc_query_lost_ps_buffer_full(stationary_probas2)[0][0])
         P2s["cor02"].append(qs2.calc_query_lost_ps_buffer_full(stationary_probas2)[0][1])
+        Ps_imp["cor02"].append(qs2.calc_nonprior_query_lost_timer(stationary_probas2))
 
         lambdas["cor04"].append(qs3.queries_stream.avg_intensity)
         Ls["cor04"].append(qs3.calc_avg_buffer_queries_num(stationary_probas3))
@@ -69,6 +72,7 @@ def main():
         Ps_alg["cor04"].append(qs3.calc_query_lost_ps_buffer_full(stationary_probas3)[1])
         P1s["cor04"].append(qs3.calc_query_lost_ps_buffer_full(stationary_probas3)[0][0])
         P2s["cor04"].append(qs3.calc_query_lost_ps_buffer_full(stationary_probas3)[0][1])
+        Ps_imp["cor04"].append(qs3.calc_nonprior_query_lost_timer(stationary_probas3))
 
     plt.plot(lambdas["poisson"], Ls["poisson"])
     plt.plot(lambdas["cor02"], Ls["cor02"])
@@ -177,6 +181,28 @@ def main():
     plt.title('Зависимость P2_loss от λ при различных\n коэффициентах корреляции длин двух соседних интервалов')
 
     plt.savefig(str.format("plots/MMAP_P2_loss_lambda_cor_0_02_04_{}.png", datetime.datetime.now()),
+                bbox_inches='tight')
+    plt.close()
+
+    plt.plot(lambdas["poisson"], Ps_imp["poisson"])
+    plt.plot(lambdas["cor02"], Ps_imp["cor02"])
+    plt.plot(lambdas["cor04"], Ps_imp["cor04"])
+    plt.ylabel('P_loss_imp')
+    plt.xlabel('λ')
+    plt.legend((str.format("c_cor^(1)={0}, c_cor^(2)={1}",
+                           round(qs1.queries_stream.c_cor[0], 3),
+                           round(qs1.queries_stream.c_cor[1], 3)),
+                str.format("c_cor^(1)={0}, c_cor^(2)={1}",
+                           round(qs2.queries_stream.c_cor[0], 3),
+                           round(qs2.queries_stream.c_cor[1], 3)),
+                str.format("c_cor^(1)={0}, c_cor^(2)={1}",
+                           round(qs3.queries_stream.c_cor[0], 3),
+                           round(qs3.queries_stream.c_cor[1], 3)),
+                ),
+               loc=0)
+    plt.title('Зависимость P_loss_imp от λ при различных\n коэффициентах корреляции длин двух соседних интервалов')
+
+    plt.savefig(str.format("plots/MMAP_P_loss_imp_lambda_cor_0_02_04_{}.png", datetime.datetime.now()),
                 bbox_inches='tight')
     plt.close()
 
