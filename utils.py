@@ -281,7 +281,7 @@ def m_exp(matr, t):
     elem = 1.
     sum = 0.
     n = 0
-    while abs(elem) >= eps:
+    while abs(np.max(elem)) >= eps:
         elem = (math.exp(-v * t) * ((v * t) ** n) / math.factorial(n)) * np.linalg.matrix_power(matrPhi, n)
         sum += elem
         n += 1
