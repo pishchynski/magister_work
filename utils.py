@@ -269,10 +269,12 @@ def m_exp(matr, t):
     :return:
     """
 
+    t = float(t)
+
     v = -matr[0][0]
     for i in range(1, matr.shape[0]):
         if v > -matr[i][i]:
-            v= -matr[i][i]
+            v = -matr[i][i]
 
     matrPhi = (1 / v) * matr + np.eye(matr.shape[0])
 

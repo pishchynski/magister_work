@@ -7,7 +7,7 @@ from matr_E import get_matr_E
 sys.path.append("../")
 from streams import *
 from ramaswami import calc_ramaswami_matrices
-import experiments_data.MMAP_02_PH_PH as test
+import experiments_data.BMMAP3_Poisson_PH_PH as test
 
 np.set_printoptions(threshold=np.inf, suppress=True, formatter={'float': '{: 0.8f}'.format}, linewidth=75)
 
@@ -45,6 +45,7 @@ class TwoPrioritiesQueueingSystem:
                               self.queries_stream.dim_ * self.serv_stream.dim))
 
         self.e_WM = e_col(self.queries_stream.dim_ * self.serv_stream.dim)
+        self.e_M = e_col(self.serv_stream.dim)
 
         self.S_0xBeta = np.dot(self.serv_stream.repres_matr_0,
                                self.serv_stream.repres_vect)
@@ -72,6 +73,9 @@ class TwoPrioritiesQueueingSystem:
                                 for i in range(1, self.N + 1)]
 
         self.matrAs = self.calcMatrAs()
+
+        self.W_1_inf = 1.
+        self.W_2_inf = 1.
 
         if verbose:
             print("\n=====RAMASWAMI MATRICES=====\n")
@@ -585,11 +589,11 @@ class TwoPrioritiesQueueingSystem:
             matrD2_sum = np.zeros(self.queries_stream.transition_matrices[1][-1].shape)
 
             if self.N - i <= self.n:
-                matrD1_sum = self.queries_stream.transition_matrices[0][self.N - i]
-                matrD2_sum = self.queries_stream.transition_matrices[1][self.N - i]
+                matrD1_sum = copy.deepcopy(self.queries_stream.transition_matrices[0][self.N - i])
+                matrD2_sum = copy.deepcopy(self.queries_stream.transition_matrices[1][self.N - i])
             for k in range(self.N - i + 1, self.n + 1):
-                matrD1_sum += self.queries_stream.transition_matrices[0][k]
-                matrD2_sum += self.queries_stream.transition_matrices[1][k]
+                matrD1_sum += copy.deepcopy(self.queries_stream.transition_matrices[0][k])
+                matrD2_sum += copy.deepcopy(self.queries_stream.transition_matrices[1][k])
 
             cur_matr = la.block_diag(*(kron(matrD1_sum, np.eye(self.serv_stream.dim * ncr(j + self.timer_stream.dim - 1,
                                                                                           self.timer_stream.dim - 1)))
@@ -794,10 +798,13 @@ class TwoPrioritiesQueueingSystem:
         for i in range(1, self.N + 1):
             stationary_probas.append(np.dot(p0, matrF[i]))
 
-        if self.check_probas(stationary_probas):
+        if self.check_probas(stationary_probas, verbose):
             print("stationary probas calculated\n")
         else:
             print("stationary probas calculated with error!\n", file=sys.stderr)
+
+        self.W_1_inf = self.func_tilde_W_1(stationary_probas, 10 ** 6)[0][0]
+        self.W_2_inf = self.func_tilde_W_2(stationary_probas, 10 ** 6)[0][0]
 
         return stationary_probas
 
@@ -826,15 +833,17 @@ class TwoPrioritiesQueueingSystem:
         ps = np.concatenate(stationary_probas, axis=1)
         print(np.dot(ps, self.sparse_generator.toarray()))
 
-    def check_probas(self, stationary_probas):
+    def check_probas(self, stationary_probas, verbose=True):
         sum = 0.0
         for num, proba in enumerate(stationary_probas):
-            print("p" + str(num) + ": " + to_latex_table(proba))
+            if verbose:
+                print("p" + str(num) + ": " + to_latex_table(proba))
             temp_sum = np.sum(proba)
             sum += temp_sum
-            print("sum: " + str(temp_sum) + "\n")
-
-        print("all_sum:", str(sum))
+            if verbose:
+                print("sum: " + str(temp_sum) + "\n")
+        if verbose:
+            print("all_sum:", str(sum))
 
         return 1 - self._eps_proba < sum < 1 + self._eps_proba
 
@@ -1004,60 +1013,106 @@ class TwoPrioritiesQueueingSystem:
 
         return p_loss
 
+    def __calc_query_lost_ps_buffer_full_D(self, stationary_probas, matrDs):
+        l_sum = (- self.N - 1) * r_multiply_e(self.queries_stream.matrD_0)
+        for k in range(1, min(self.N + 1, self.n) + 1):
+            l_sum += (k - self.N - 1) * r_multiply_e(matrDs[k])
+
+        l_sum = np.dot(np.dot(stationary_probas[0],
+                              np.array(np.bmat([[self.I_W],
+                                                [kron(self.O_W,
+                                                      e_col(self.serv_stream.dim))]]),
+                                       dtype=float)),
+                       l_sum)
+
+        c_sum = (- self.N) * r_multiply_e(self.queries_stream.matrD_0)
+        for k in range(1, min(self.N, self.n) + 1):
+            c_sum += (k - self.N) * r_multiply_e(matrDs[k])
+
+        c_sum = np.dot(np.dot(stationary_probas[0],
+                              np.array(np.bmat([[self.O_W],
+                                                [kron(self.I_W,
+                                                      e_col(self.serv_stream.dim))]]),
+                                       dtype=float)),
+                       c_sum)
+        p_loss = l_sum + c_sum
+        if self.N > 1:
+            r_sum_1 = np.dot(stationary_probas[1],
+                             self.calI_1[1])
+            r_sum_2 = (- self.N + 1) * r_multiply_e(self.queries_stream.matrD_0)
+            for k in range(1, min(self.N, self.n + 1)):
+                r_sum_2 += (k - self.N + 1) * r_multiply_e(matrDs[k])
+
+            r_sum_full = np.dot(r_sum_1, r_sum_2)
+
+            for i in range(2, self.N):
+                r_sum_1 = np.dot(stationary_probas[i],
+                                 self.calI_1[i])
+                r_sum_2 = (- self.N + i) * r_multiply_e(self.queries_stream.matrD_0)
+                for k in range(1, min(self.N - i, self.n) + 1):
+                    r_sum_2 += (k - self.N + i) * r_multiply_e(matrDs[k])
+
+                r_sum_full += np.dot(r_sum_1, r_sum_2)
+
+            p_loss += r_sum_full
+
+        return p_loss[0][0]
+
+    def __calc_query_lost_ps_buffer_part_D(self, stationary_probas, matrDs):
+        sum1 = np.zeros((self.queries_stream.dim_, 1))
+        for k in range(1, min(self.N + 1, self.n) + 1):
+            sum1 += k * r_multiply_e(matrDs[k])
+        for k in range(self.N + 2, self.n + 1):
+            sum1 += (self.N + 1) * r_multiply_e(matrDs[k])
+
+        sum1 = np.dot(np.dot(stationary_probas[0],
+                             np.array(np.bmat([[self.I_W],
+                                               [kron(self.O_W,
+                                                     self.e_M)
+                                                ]]))),
+                      sum1)
+
+        sum2 = np.zeros((self.queries_stream.dim_, 1))
+        for k in range(1, min(self.N, self.n) + 1):
+            sum2 += k * r_multiply_e(matrDs[k])
+
+        for k in range(self.N + 1, self.n + 1):
+            sum2 += self.N * r_multiply_e(matrDs[k])
+
+        sum2 = np.dot(np.dot(stationary_probas[0],
+                             np.array(np.bmat([[self.O_W],
+                                               [kron(self.I_W,
+                                                     self.e_M)
+                                                ]]))),
+                      sum2)
+
+        sum3 = np.zeros((1, 1))
+        for i in range(1, self.N):
+            sump3 = np.zeros((self.queries_stream.dim_, 1))
+            for k in range(1, min(self.N - i, self.n) + 1):
+                sump3 += k * r_multiply_e(matrDs[k])
+
+            for k in range(self.N - i + 1, self.n + 1):
+                sump3 += (self.N - i) * r_multiply_e(matrDs[k])
+
+            sum3 += np.dot(np.dot(stationary_probas[i],
+                                  self.calI_1[i]),
+                           sump3)
+
+        return (sum1 + sum2 + sum3)[0][0]
+
     def calc_query_lost_ps_buffer_full(self, stationary_probas):
         P_losses = []
-        p_loss_alg = 0
         for i in range(2):
-            l_sum = (- self.N - 1) * r_multiply_e(self.queries_stream.transition_matrices[i][0])
-            for k in range(1, self.N + 2):
-                if k <= self.n:
-                    l_sum += (k - self.N - 1) * r_multiply_e(self.queries_stream.transition_matrices[i][k])
+            P_losses.append(1 - (1 / self.queries_stream.avg_intensity_t[i]) * self.__calc_query_lost_ps_buffer_part_D(
+                stationary_probas,
+                self.queries_stream.transition_matrices[i]))
 
-            l_sum = np.dot(np.array(np.dot(stationary_probas[0],
-                                           np.bmat([[self.I_W],
-                                                    [kron(self.O_W,
-                                                          e_col(self.serv_stream.dim))]])),
-                                    dtype=float),
-                           l_sum)
+        matrDks = [self.queries_stream.transition_matrices[0][i] + self.queries_stream.transition_matrices[1][i] for i
+                   in range(self.n + 1)]
 
-            c_sum = (- self.N) * r_multiply_e(self.queries_stream.transition_matrices[i][0])
-            for k in range(1, self.N + 1):
-                if k <= self.n:
-                    c_sum += (k - self.N) * r_multiply_e(self.queries_stream.transition_matrices[i][k])
-
-            c_sum = np.dot(np.array(np.dot(stationary_probas[0],
-                                           np.bmat([[self.O_W],
-                                                    [kron(self.I_W,
-                                                          e_col(self.serv_stream.dim))]])),
-                                    dtype=float),
-                           c_sum)
-            p_loss = l_sum + c_sum
-            if self.N > 1:
-                r_sum_1 = np.dot(stationary_probas[1],
-                                 self.calI_1[1])
-                r_sum_2 = (- self.N + 1) * r_multiply_e(self.queries_stream.transition_matrices[i][0])
-                for k in range(1, self.N):
-                    if k <= self.n:
-                        r_sum_2 += (k - self.N + 1) * r_multiply_e(self.queries_stream.transition_matrices[i][k])
-
-                r_sum_full = np.dot(r_sum_1, r_sum_2)
-
-                for j in range(2, self.N):
-                    r_sum_1 = np.dot(stationary_probas[j],
-                                     self.calI_1[j])
-                    r_sum_2 = (- self.N + j) * r_multiply_e(self.queries_stream.transition_matrices[i][0])
-                    for k in range(1, self.N):
-                        if k <= self.n:
-                            r_sum_2 += (k - self.N + j) * r_multiply_e(self.queries_stream.transition_matrices[i][k])
-
-                    r_sum_full += np.dot(r_sum_1, r_sum_2)
-
-                p_loss += r_sum_full
-                p_loss_alg += p_loss[0][0]
-
-            P_losses.append(1 - (1 / self.queries_stream.avg_intensity_t[i]) * p_loss[0][0])
-
-        p_loss_alg = 1 - (1 / self.queries_stream.avg_intensity) * p_loss_alg
+        p_loss_alg = 1 - (1 / self.queries_stream.avg_intensity) * self.__calc_query_lost_ps_buffer_full_D(
+            stationary_probas, matrDks)
 
         return P_losses, p_loss_alg
 
@@ -1086,20 +1141,19 @@ class TwoPrioritiesQueueingSystem:
                           [ncr(k + self.timer_stream.dim - 1,
                                self.timer_stream.dim - 1)
                            for k in range(j)])),
-                                         int(self.queries_stream.dim_ * self.serv_stream.dim * ncr(
-                                          j + self.timer_stream.dim - 1,
-                                          self.timer_stream.dim - 1))))],
+                                          int(self.queries_stream.dim_ * self.serv_stream.dim * ncr(
+                                              j + self.timer_stream.dim - 1,
+                                              self.timer_stream.dim - 1))))],
                                [np.eye(self.queries_stream.dim_ * self.serv_stream.dim * ncr(
-                                          j + self.timer_stream.dim - 1,
-                                          self.timer_stream.dim - 1))],
+                                   j + self.timer_stream.dim - 1,
+                                   self.timer_stream.dim - 1))],
                                [np.zeros((int(self.queries_stream.dim_ * self.serv_stream.dim * np.sum(
-                          [ncr(k + self.timer_stream.dim - 1,
-                               self.timer_stream.dim - 1)
-                           for k in range(j + 1, i + 1)])),
-                                         int(self.queries_stream.dim_ * self.serv_stream.dim * ncr(
-                                             j + self.timer_stream.dim - 1,
-                                             self.timer_stream.dim - 1))))]]))
-
+                                   [ncr(k + self.timer_stream.dim - 1,
+                                        self.timer_stream.dim - 1)
+                                    for k in range(j + 1, i + 1)])),
+                                          int(self.queries_stream.dim_ * self.serv_stream.dim * ncr(
+                                              j + self.timer_stream.dim - 1,
+                                              self.timer_stream.dim - 1))))]]))
 
     def calcMatrAs(self):
         matrAs = []
@@ -1116,23 +1170,24 @@ class TwoPrioritiesQueueingSystem:
             matrAs.append(matrA)
         return matrAs
 
-    def funcW_1(self, stationary_probas, t):
+    def func_tilde_W_1(self, stationary_probas, t):
         """
         Probability that query came into QS as a prior and its waiting time < t
         """
         matrAs = self.matrAs
 
-        sum1 = r_multiply_e(self.queries_stream.transition_matrices[1][0])
+        sum1 = r_multiply_e(self.queries_stream.transition_matrices[0][1])
         for k in range(2, self.n + 1):
-            rmul1 = 1
+            rmul1 = 1.
             for j in range(2, min(self.N + 1, k) + 1):
                 beta_temp = np.concatenate(
                     (self.serv_stream.repres_vect, np.zeros((1, (j - 2) * self.serv_stream.dim))), axis=1)
-                exp_temp = m_exp(matrAs[j - 2], t)
+                # exp_temp = m_exp(matrAs[j - 2], t)
+                exp_temp = la.expm(matrAs[j - 2] * t)
                 rmul1 += np.dot(np.dot(beta_temp,
                                        (np.eye(exp_temp.shape[0]) - exp_temp)),
                                 e_col((j - 1) * self.serv_stream.dim))[0][0]
-            sum1 += r_multiply_e(self.queries_stream.transition_matrices[k][0]) * rmul1
+            sum1 += r_multiply_e(self.queries_stream.transition_matrices[0][k]) * rmul1
 
         sum1 = np.dot(np.dot(stationary_probas[0],
                              np.array(np.bmat([[self.I_W],
@@ -1146,45 +1201,48 @@ class TwoPrioritiesQueueingSystem:
             for j in range(1, min(self.N, k) + 1):
                 mul1 = np.concatenate((self.I_M, np.zeros((self.serv_stream.dim, (j - 1) * self.serv_stream.dim))),
                                       axis=1)
-                exp_temp2 = m_exp(matrAs[j - 1], t)
+                # exp_temp2 = m_exp(matrAs[j - 1], t)
+                exp_temp2 = la.expm(matrAs[j - 1] * t)
                 rmul2 += np.dot(np.dot(mul1, np.eye(exp_temp2.shape[0]) - exp_temp2),
                                 e_col(j * self.serv_stream.dim))
-            sum2 += np.dot(kron(r_multiply_e(self.queries_stream.transition_matrices[k][0]), self.I_M), rmul2)
+            sum2 += np.dot(kron(r_multiply_e(self.queries_stream.transition_matrices[0][k]), self.I_M), rmul2)
 
         sum2 = np.dot(np.dot(stationary_probas[0],
                              np.array(np.bmat([[np.zeros((self.queries_stream.dim_,
-                                                         self.queries_stream.dim_ * self.serv_stream.dim))],
+                                                          self.queries_stream.dim_ * self.serv_stream.dim))],
                                                [self.I_WM]]))),
                       sum2)
 
         sum3 = np.zeros(sum1.shape)
         for i in range(1, self.N):
             for j in range(i + 1):
-                sump3 = 0
+                sump3 = 0.
                 for k in range(1, self.n + 1):
                     rmul3 = np.zeros((self.serv_stream.dim, 1))
                     for el in range(1, min(self.N - i, k) + 1):
                         mul1 = np.concatenate(
                             (self.I_M, np.zeros((self.serv_stream.dim, (i - j + el - 1) * self.serv_stream.dim))),
                             axis=1)
-                        exp_temp3 = m_exp(matrAs[i - j + el - 1], t)
+                        # exp_temp3 = m_exp(matrAs[i - j + el - 1], t)
+                        exp_temp3 = la.expm(matrAs[i - j + el - 1] * t)
                         rmul3 += np.dot(np.dot(mul1,
                                                np.eye(exp_temp3.shape[0]) - exp_temp3),
                                         e_col((i - j + el) * self.serv_stream.dim))
 
-                    sump3 += np.dot(kron(kron(r_multiply_e(self.queries_stream.transition_matrices[k][0]),
-                                       self.I_M),
-                                  e_col(ncr(j + self.timer_stream.dim - 1,
-                                                    self.timer_stream.dim - 1))), rmul3)
+                    sump3 += np.dot(kron(kron(r_multiply_e(self.queries_stream.transition_matrices[0][k]),
+                                              self.I_M),
+                                         e_col(ncr(j + self.timer_stream.dim - 1,
+                                                   self.timer_stream.dim - 1))), rmul3)
                 sum3 += np.dot(self.calc_pij(stationary_probas, i, j),
                                sump3)
+
         prob = (1 / self.queries_stream.avg_intensity) * (sum1 + sum2 + sum3)
         return prob
 
-    def funcW_2(self, stationary_probas, t):
+    def func_tilde_W_2(self, stationary_probas, t):
         matrAs = self.matrAs
 
-        sum = 0
+        sum = 0.
         for i in range(1, self.N + 1):
             for j in range(1, i + 1):
                 mul1 = self.calc_pij(stationary_probas, i, j)
@@ -1194,7 +1252,8 @@ class TwoPrioritiesQueueingSystem:
                 mul3 = np.concatenate(
                     (self.I_M, np.zeros((self.serv_stream.dim, (i - j) * self.serv_stream.dim))),
                     axis=1)
-                temp_exp = m_exp(matrAs[i - j], t)
+                # temp_exp = m_exp(matrAs[i - j], t)
+                temp_exp = la.expm(matrAs[i - j] * t)
 
                 mul4 = np.eye(temp_exp.shape[0]) - temp_exp
 
@@ -1206,15 +1265,21 @@ class TwoPrioritiesQueueingSystem:
                                      mul4),
                               mul5)[0][0]
 
-        sumGamma = 0
+        sumGamma = 0.
         for i in range(1, self.N + 1):
             for j in range(1, i + 1):
                 sumGamma += np.dot(self.calc_pij(stationary_probas, i, j),
                                    kron(self.e_WM,
                                         r_multiply_e(self.ramatrL[self.N - i + j][self.N - i])))[0][0]
 
-        sum = (1 - self.p_hp) / sumGamma * sum
-        return sum
+        sum = (1. - self.p_hp) / sumGamma * sum
+        return np.array(sum, dtype=float)
+
+    def func_W_1(self, stationary_probas, t):
+        return (self.func_tilde_W_1(stationary_probas, t) / self.W_1_inf)[0][0]
+
+    def func_W_2(self, stationary_probas, t):
+        return (self.func_tilde_W_2(stationary_probas, t) / self.W_2_inf)[0][0]
 
     def calc_characteristics(self, verbose=False):
         stationary_probas = self.calc_stationary_probas(verbose)
@@ -1257,8 +1322,8 @@ class TwoPrioritiesQueueingSystem:
         check_theta = self.check_by_theta(stationary_probas)
         print("theta =", check_theta, " -- theta_true =", self.queries_stream.theta)
 
-        f1t1 = self.funcW_1(stationary_probas, 100)
-        f2t1 = self.funcW_2(stationary_probas, 100)
+        f1t1 = self.func_W_1(stationary_probas, 0.59)
+        f2t1 = self.func_W_2(stationary_probas, 0.59)
 
         print("F_1(1) =", f1t1)
         print("F_2(1) =", f2t1)
@@ -1273,7 +1338,7 @@ class TwoPrioritiesQueueingSystem:
 
 
 if __name__ == '__main__':
-    test_data = test.Mmap02PhPh()
+    test_data = test.Bmmap3PoissonPhPh()
 
     qs = TwoPrioritiesQueueingSystem(test_data, verbose=True)
     qs.queries_stream.print_characteristics()

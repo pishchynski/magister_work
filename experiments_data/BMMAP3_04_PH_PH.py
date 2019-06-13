@@ -13,7 +13,7 @@ class Bmmap304PhPh:
         self.test_q = 0.8
         self.test_n = 3
 
-        self.test_N = 2
+        self.test_N = 5
         self.p_hp = 0.4
 
         self.priority_part = 0.7

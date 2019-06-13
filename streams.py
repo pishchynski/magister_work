@@ -205,9 +205,9 @@ class BMMAPStream:
         # matrD_t = [0.99999999999 * np.array(matrD, dtype=float), 0.00000000001 * np.array(matrD, dtype=float)]
         # matrD_t = [0.0000000000000001 * np.array(matrD), 0.9999999999999999 * np.array(matrD)]
         for t in range(t_num):
-            if n == 3:
+            if n != 1:
                 for k in range(1, n + 1):
-                    self.transition_matrices[t].append(matrD_t[t] * (q ** (k - 1)) * (1 - q) / (1 - q ** 3))
+                    self.transition_matrices[t].append(matrD_t[t] * (q ** (k - 1)) * (1 - q) / (1 - q ** n))
             elif n == 1:
                 self.transition_matrices[t].append(matrD_t[t])
 

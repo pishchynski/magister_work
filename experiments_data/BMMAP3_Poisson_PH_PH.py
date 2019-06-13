@@ -4,8 +4,8 @@ import numpy as np
 class Bmmap3PoissonPhPh:
     def __init__(self):
         # BMMAP
-        self.test_matrD_0 = np.array([[-17.2743362832]])
-        self.test_matrD = np.array([[17.2743362832]])
+        self.test_matrD_0 = np.array([[-17.274336283185839]])
+        self.test_matrD = np.array([[17.274336283185839]])
 
         self.priority_part = 0.7
 
