@@ -1,14 +1,14 @@
 import numpy as np
 
 
-class Bmmap304PhPh:
+class Bmmap504PhPh:
     def __init__(self, matrS_elem=20):
         # BMMAP
         self.test_matrD_0 = np.array([[-86, 0.01],
-                                      [0.02, -2.76]]) * 0.973076224985
+                                      [0.02, -2.76]]) * 0.023244266431291
 
         self.test_matrD = np.array([[85, 0.99],
-                                    [0.2, 2.54]]) * 0.973076224985
+                                    [0.2, 2.54]]) * 0.023244266431291
 
         self.test_qs = (0.8, 0.2)
         self.test_ns = (5, 2)

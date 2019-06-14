@@ -184,7 +184,7 @@ class BMMAPStream:
         print('Correlation coefficient:', self.c_cor, file=file)
         print('=======END=======', '\n', file=file)
 
-    def __init__(self, matrD_0, matrD, q=0.8, n=3, t_num=2, priority_part=0.7):
+    def __init__(self, matrD_0, matrD, qs=(0.8, 0.8), ns=(3, 3), t_num=2, priority_part=0.7):
         """
         Constructor for BMMAPStream.
         transition_matrices is a list where each row is transition matrices for one query type
@@ -193,22 +193,27 @@ class BMMAPStream:
         :param matrD_0: np.array or list with matrix D_0
         :param matrD: np.array or list with matrix that will be used to generate other matrices
         :param q: float coefficient for generating other matrices
-        :param n: int number of matrices to be generated (excluding matrix D_0)
+        :param ns: (int, int) numbers of matrices to be generated (excluding matrix D_0)
         :param t_num: int number of queries types
         """
 
-        self.q = q
+        self.qs = qs
         self.transition_matrices = [[] for _ in range(t_num)]
         self.matrD_0 = np.array(matrD_0, dtype=float)
         matrD_0s = [priority_part * self.matrD_0, (1. - priority_part) * self.matrD_0]
         matrD_t = [priority_part * np.array(matrD, dtype=float), (1.0 - priority_part) * np.array(matrD, dtype=float)]
         # matrD_t = [0.99999999999 * np.array(matrD, dtype=float), 0.00000000001 * np.array(matrD, dtype=float)]
         # matrD_t = [0.0000000000000001 * np.array(matrD), 0.9999999999999999 * np.array(matrD)]
+        n = max(ns)
+
         for t in range(t_num):
-            if n != 1:
-                for k in range(1, n + 1):
-                    self.transition_matrices[t].append(matrD_t[t] * (q ** (k - 1)) * (1 - q) / (1 - q ** n))
-            elif n == 1:
+            if ns[t] != 1:
+                for k in range(1, ns[t] + 1):
+                    self.transition_matrices[t].append(matrD_t[t] * (qs[t] ** (k - 1)) * (1 - qs[t]) / (1 - qs[t] ** ns[t]))
+                for k in range(ns[t], n):
+                    self.transition_matrices[t].append(np.zeros(matrD_t[t].shape))
+
+            elif ns[t] == 1:
                 self.transition_matrices[t].append(matrD_t[t])
 
         self.dim_ = self.transition_matrices[0][0].shape[0]

@@ -1,23 +1,34 @@
 import datetime
+import os
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-import experiments_data.BMMAP3_02_PH_PH as cor02
-import experiments_data.BMMAP3_04_PH_PH as cor04
-import experiments_data.BMMAP3_Poisson_PH_PH as poisson
+import experiments.lambdas.data.BMMAP5_02_PH_PH as cor02
+import experiments.lambdas.data.BMMAP5_04_PH_PH as cor04
+import experiments.lambdas.data.BMMAP5_Poisson_PH_PH as poisson
 import two_priorities_qs as qs
+
+from tqdm import tqdm
 
 
 def main():
-    test_data_Poisson_initial = poisson.Bmmap3PoissonPhPh()
-    test_data_Poisson = poisson.Bmmap3PoissonPhPh()
+    nowdate = datetime.datetime.now()
 
-    test_data_02_initial = cor02.Bmmap302PhPh()
-    test_data_02 = cor02.Bmmap302PhPh()
+    if not os.path.exists("plots"):
+        os.makedirs("plots")
 
-    test_data_04_initial = cor04.Bmmap304PhPh()
-    test_data_04 = cor04.Bmmap304PhPh()
+    if not os.path.exists("tables"):
+        os.makedirs("tables")
+
+    test_data_Poisson_initial = poisson.Bmmap5PoissonPhPh()
+    test_data_Poisson = poisson.Bmmap5PoissonPhPh()
+
+    test_data_02_initial = cor02.Bmmap502PhPh()
+    test_data_02 = cor02.Bmmap502PhPh()
+
+    test_data_04_initial = cor04.Bmmap504PhPh()
+    test_data_04 = cor04.Bmmap504PhPh()
 
     qs1 = qs.TwoPrioritiesQueueingSystem(test_data_Poisson_initial)
     qs2 = qs.TwoPrioritiesQueueingSystem(test_data_02_initial)
@@ -30,8 +41,9 @@ def main():
     P1s = {"poisson": [], "cor02": [], "cor04": [], "poisson_PH_poisson_NoRemoval": [], "poisson_NoRemoval": []}
     P2s = {"poisson": [], "cor02": [], "cor04": [], "poisson_PH_poisson_NoRemoval": [], "poisson_NoRemoval": []}
     Ps_imp = {"poisson": [], "cor02": [], "cor04": [], "poisson_PH_poisson_NoRemoval": [], "poisson_NoRemoval": []}
+    w1s = {"poisson": [], "cor02": [], "cor04": []}
 
-    for coef in np.linspace(0.01, 3, 100):
+    for coef in tqdm(np.linspace(1, 30, 30)):
         test_data_Poisson.test_matrD = test_data_Poisson_initial.test_matrD * coef
         test_data_Poisson.test_matrD_0 = test_data_Poisson_initial.test_matrD_0 * coef
 
@@ -57,6 +69,7 @@ def main():
         P1s["poisson"].append(qs1.calc_query_lost_ps_buffer_full(stationary_probas1)[0][0])
         P2s["poisson"].append(qs1.calc_query_lost_ps_buffer_full(stationary_probas1)[0][1])
         Ps_imp["poisson"].append(qs1.calc_nonprior_query_lost_timer(stationary_probas1))
+        w1s["poisson"].append(qs1.avg_wait_time_1(stationary_probas1))
 
         lambdas["cor02"].append(qs2.queries_stream.avg_intensity)
         Ls["cor02"].append(qs2.calc_avg_buffer_queries_num(stationary_probas2))
@@ -65,6 +78,7 @@ def main():
         P1s["cor02"].append(qs2.calc_query_lost_ps_buffer_full(stationary_probas2)[0][0])
         P2s["cor02"].append(qs2.calc_query_lost_ps_buffer_full(stationary_probas2)[0][1])
         Ps_imp["cor02"].append(qs2.calc_nonprior_query_lost_timer(stationary_probas2))
+        w1s["cor02"].append(qs2.avg_wait_time_1(stationary_probas2))
 
         lambdas["cor04"].append(qs3.queries_stream.avg_intensity)
         Ls["cor04"].append(qs3.calc_avg_buffer_queries_num(stationary_probas3))
@@ -73,6 +87,7 @@ def main():
         P1s["cor04"].append(qs3.calc_query_lost_ps_buffer_full(stationary_probas3)[0][0])
         P2s["cor04"].append(qs3.calc_query_lost_ps_buffer_full(stationary_probas3)[0][1])
         Ps_imp["cor04"].append(qs3.calc_nonprior_query_lost_timer(stationary_probas3))
+        w1s["cor04"].append(qs3.avg_wait_time_1(stationary_probas3))
 
     plt.plot(lambdas["poisson"], Ls["poisson"])
     plt.plot(lambdas["cor02"], Ls["cor02"])
@@ -92,7 +107,7 @@ def main():
                loc=0)
     plt.title('Зависимость L от λ при различных\n коэффициентах корреляции длин двух соседних интервалов')
 
-    plt.savefig(str.format("plots/BMMAP3_L_lambda_cor_0_02_04_{}.png", datetime.datetime.now()),
+    plt.savefig(str.format("plots/BMMAP5_L_lambda_cor_0_02_04_{}.png", nowdate),
                 bbox_inches='tight')
     plt.close()
 
@@ -114,7 +129,7 @@ def main():
                loc=0)
     plt.title('Зависимость P_loss от λ при различных\n коэффициентах корреляции длин двух соседних интервалов')
 
-    plt.savefig(str.format("plots/BMMAP3_P_loss_lambda_cor_0_02_04_{}.png", datetime.datetime.now()),
+    plt.savefig(str.format("plots/BMMAP5_P_loss_lambda_cor_0_02_04_{}.png", nowdate),
                 bbox_inches='tight')
     plt.close()
 
@@ -136,7 +151,7 @@ def main():
                loc=0)
     plt.title('Зависимость P_loss_alg от λ при различных\n коэффициентах корреляции длин двух соседних интервалов')
 
-    plt.savefig(str.format("plots/BMMAP3_P_loss_alg_lambda_cor_0_02_04_{}.png", datetime.datetime.now()),
+    plt.savefig(str.format("plots/BMMAP5_P_loss_alg_lambda_cor_0_02_04_{}.png", nowdate),
                 bbox_inches='tight')
     plt.close()
 
@@ -158,7 +173,7 @@ def main():
                loc=0)
     plt.title('Зависимость P1_loss от λ при различных\n коэффициентах корреляции длин двух соседних интервалов')
 
-    plt.savefig(str.format("plots/BMMAP3_P1_loss_lambda_cor_0_02_04_{}.png", datetime.datetime.now()),
+    plt.savefig(str.format("plots/BMMAP5_P1_loss_lambda_cor_0_02_04_{}.png", nowdate),
                 bbox_inches='tight')
     plt.close()
 
@@ -180,7 +195,7 @@ def main():
                loc=0)
     plt.title('Зависимость P2_loss от λ при различных\n коэффициентах корреляции длин двух соседних интервалов')
 
-    plt.savefig(str.format("plots/BMMAP3_P2_loss_lambda_cor_0_02_04_{}.png", datetime.datetime.now()),
+    plt.savefig(str.format("plots/BMMAP5_P2_loss_lambda_cor_0_02_04_{}.png", nowdate),
                 bbox_inches='tight')
     plt.close()
 
@@ -202,7 +217,29 @@ def main():
                loc=0)
     plt.title('Зависимость P_loss_imp от λ при различных\n коэффициентах корреляции длин двух соседних интервалов')
 
-    plt.savefig(str.format("plots/BMMAP3_P_loss_imp_lambda_cor_0_02_04_{}.png", datetime.datetime.now()),
+    plt.savefig(str.format("plots/BMMAP5_P_loss_imp_lambda_cor_0_02_04_{}.png", nowdate),
+                bbox_inches='tight')
+    plt.close()
+
+    plt.plot(lambdas["poisson"], w1s["poisson"])
+    plt.plot(lambdas["cor02"], w1s["cor02"])
+    plt.plot(lambdas["cor04"], w1s["cor04"])
+    plt.ylabel('w1')
+    plt.xlabel('λ')
+    plt.legend((str.format("c_cor^(1)={0}, c_cor^(2)={1}",
+                           round(qs1.queries_stream.c_cor[0], 3),
+                           round(qs1.queries_stream.c_cor[1], 3)),
+                str.format("c_cor^(1)={0}, c_cor^(2)={1}",
+                           round(qs2.queries_stream.c_cor[0], 3),
+                           round(qs2.queries_stream.c_cor[1], 3)),
+                str.format("c_cor^(1)={0}, c_cor^(2)={1}",
+                           round(qs3.queries_stream.c_cor[0], 3),
+                           round(qs3.queries_stream.c_cor[1], 3)),
+                ),
+               loc=0)
+    plt.title('Зависимость w1 от λ при различных\n коэффициентах корреляции длин двух соседних интервалов')
+
+    plt.savefig(str.format("plots/BMMAP5_w1_lambda_cor_{}.png", nowdate),
                 bbox_inches='tight')
     plt.close()
 

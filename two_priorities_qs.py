@@ -26,8 +26,8 @@ class TwoPrioritiesQueueingSystem:
 
         self.queries_stream = BMMAPStream(matrD_0=experiment_data.test_matrD_0,
                                           matrD=experiment_data.test_matrD,
-                                          q=experiment_data.test_q,
-                                          n=experiment_data.test_n,
+                                          qs=experiment_data.test_qs,
+                                          ns=experiment_data.test_ns,
                                           priority_part=experiment_data.priority_part)
         self.serv_stream = PHStream(experiment_data.test_vect_beta, experiment_data.test_matrS)
         self.timer_stream = PHStream(experiment_data.test_vect_gamma, experiment_data.test_matrGamma)
@@ -51,7 +51,9 @@ class TwoPrioritiesQueueingSystem:
                                self.serv_stream.repres_vect)
 
         self.p_hp = experiment_data.p_hp  # probability of the query to leave system after the timer's up
-        self.n = experiment_data.test_n  # number of D_i matrices
+        self.ns = experiment_data.test_ns  # number of D_i matrices
+        self.n = max(self.ns)
+
         self.N = experiment_data.test_N  # buffer capacity
         self.ramatrL, self.ramatrA, self.ramatrP = self._calc_ramaswami_matrices(0, self.N)
         self.calI_1 = [np.array(np.bmat([[kron(kron(self.I_W,
@@ -95,9 +97,11 @@ class TwoPrioritiesQueueingSystem:
 
         self.recalculate_generator(verbose=verbose)
 
-    def set_BMMAP_queries_stream(self, matrD_0, matrD, q=0.8, n=3, recalculate_generator=False):
-        self.queries_stream = BMAPStream(matrD_0, matrD, q, n)
-        self.n = n
+    def set_BMMAP_queries_stream(self, matrD_0, matrD, qs=(0.8, 0.8), ns=(3, 3), recalculate_generator=False):
+        self.queries_stream = BMMAPStream(matrD_0, matrD, qs, ns)
+        self.ns = ns
+        self.n = max(self.ns)
+
         if recalculate_generator:
             self.recalculate_generator()
 
@@ -129,7 +133,7 @@ class TwoPrioritiesQueueingSystem:
             print('======= PH timer parameters =======')
             self.timer_stream.print_characteristics('Г', 'gamma')
 
-        print("Generator recalculating")
+        # print("Generator recalculating")
 
         matrQ_0k = self._calc_Q_0k()
         matrQ_iiprev = self._calc_Q_iiprev()
@@ -140,7 +144,7 @@ class TwoPrioritiesQueueingSystem:
         self.check_generator(matrQ_0k, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN)
         self.finalize_generator(matrQ_0k, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN)
 
-        print("Generator recalculated:")
+        # print("Generator recalculated:")
 
         if verbose:
             for row_num, block_row in enumerate(self.generator):
@@ -182,7 +186,7 @@ class TwoPrioritiesQueueingSystem:
         :return: numpy.array
         """
 
-        print("Calculating Q_00")
+        # print("Calculating Q_00")
 
         block00 = copy.deepcopy(self.queries_stream.matrD_0)
         block01 = kron(self.queries_stream.transition_matrices[0][1] + self.queries_stream.transition_matrices[1][1],
@@ -195,7 +199,7 @@ class TwoPrioritiesQueueingSystem:
         matrQ_00 = np.bmat([[block00, block01],
                             [block10, block11]])
 
-        print("Q_00 calculated")
+        # print("Q_00 calculated")
 
         return np.array(matrQ_00, dtype=float)
 
@@ -205,7 +209,7 @@ class TwoPrioritiesQueueingSystem:
 
         :return: list of np.arrays with Q_{0, k}
         """
-        print("Calculating Q_0k")
+        # print("Calculating Q_0k")
         matrQ_0k = [self._calc_Q_00()]
 
         for k in range(1, self.N):
@@ -282,7 +286,7 @@ class TwoPrioritiesQueueingSystem:
 
         matrQ_0k.append(self._calc_Q_0N())
 
-        print("Q_0k calculated")
+        # print("Q_0k calculated")
 
         return matrQ_0k
 
@@ -293,7 +297,7 @@ class TwoPrioritiesQueueingSystem:
         :return:
         """
 
-        print("Calculating Q_0N")
+        # print("Calculating Q_0N")
 
         # block00 = np.zeros((1, 1))
         if self.N + 1 > self.n:
@@ -372,7 +376,7 @@ class TwoPrioritiesQueueingSystem:
         blocks0k.append(last_block0)
         blocks1k.append(last_block1)
 
-        print("Q_0N calculated")
+        # print("Q_0N calculated")
 
         return np.array(np.bmat([blocks0k,
                                  blocks1k]),
@@ -385,7 +389,7 @@ class TwoPrioritiesQueueingSystem:
         :return:
         """
 
-        print("Calculating Q_10")
+        # print("Calculating Q_10")
 
         block00 = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim,
                             self.queries_stream.dim_))
@@ -399,7 +403,7 @@ class TwoPrioritiesQueueingSystem:
         block11 += self.p_hp * kron(self.I_WM,
                                     self.timer_stream.repres_matr_0)
 
-        print("Q_10 calculated")
+        # print("Q_10 calculated")
 
         return np.array(np.bmat([[block00, block01],
                                  [block10, block11]]),
@@ -412,7 +416,7 @@ class TwoPrioritiesQueueingSystem:
         :return:
         """
 
-        print("Calculating Q_{i, i - 1}")
+        # print("Calculating Q_{i, i - 1}")
 
         matrQ_iiprev = [None, self._calc_Q_10()]
         for i in range(2, self.N + 1):
@@ -450,7 +454,7 @@ class TwoPrioritiesQueueingSystem:
 
             matrQ_iiprev.append(temp1 + temp2)
 
-        print("Q_{i, i - 1} calculated")
+        # print("Q_{i, i - 1} calculated")
 
         return matrQ_iiprev
 
@@ -460,7 +464,7 @@ class TwoPrioritiesQueueingSystem:
 
         :return: list of matrices Q_ii
         """
-        print("Calculating Q_{i, i}")
+        # print("Calculating Q_{i, i}")
 
         matrQ_ii = [None]
         for i in range(1, self.N + 1):
@@ -487,7 +491,7 @@ class TwoPrioritiesQueueingSystem:
 
             matrQ_ii.append(cur_matr)
 
-        print("Q_{i, i} calculated")
+        # print("Q_{i, i} calculated")
 
         return matrQ_ii
 
@@ -505,7 +509,7 @@ class TwoPrioritiesQueueingSystem:
         :return:
         """
 
-        print("Calculating Q_{i, i + k}")
+        # print("Calculating Q_{i, i + k}")
 
         matrQ_iik = [None]
         for i in range(1, self.N):
@@ -571,7 +575,7 @@ class TwoPrioritiesQueueingSystem:
 
             matrQ_iik.append(matrQ_ii_row)
 
-        print("Q_{i, i + k} calculated")
+        # print("Q_{i, i + k} calculated")
 
         return matrQ_iik
 
@@ -581,7 +585,7 @@ class TwoPrioritiesQueueingSystem:
 
         :return: list of np.arrays with Q_{i, N}
         """
-        print("Calculating Q_{i, N}")
+        # print("Calculating Q_{i, N}")
 
         matrQ_iN = [None]
         for i in range(1, self.N):
@@ -628,7 +632,7 @@ class TwoPrioritiesQueueingSystem:
 
             matrQ_iN.append(cur_matr)
 
-        print("Q_{i, N} calculated")
+        # print("Q_{i, N} calculated")
 
         return matrQ_iN
 
@@ -644,7 +648,7 @@ class TwoPrioritiesQueueingSystem:
         :param matrQ_iN:
         """
         # First block-row
-        print("Generator check started")
+        # print("Generator check started")
 
         for i in range(self.queries_stream.dim_ + self.queries_stream.dim_ * self.serv_stream.dim):
             temp = 0
@@ -669,10 +673,10 @@ class TwoPrioritiesQueueingSystem:
         temp = np.sum(matrQ_iiprev[self.N], axis=1) + np.sum(matrQ_ii[self.N], axis=1)
         delta = np.diag(-temp)
         matrQ_ii[self.N] += delta
-        print("Generator checked")
+        # print("Generator checked")
 
     def finalize_generator(self, matrQ_0k, matrQ_iiprev, matrQ_ii, matrQ_iik, matrQ_iN):
-        print("Finalizing generator")
+        # print("Finalizing generator")
 
         matrQ = [[None for _ in range(self.N + 1)] for _ in range(self.N + 1)]
 
@@ -686,17 +690,17 @@ class TwoPrioritiesQueueingSystem:
 
                 matrQ[i][self.N] = matrQ_iN[i]
         self.generator = matrQ
-        print("Generator finalized")
-        print("Creating sparse generator")
+        # print("Generator finalized")
+        # print("Creating sparse generator")
 
         sparse_matrQ = [[None if matrQ[i][j] is None else sparse.csr_matrix(matrQ[i][j]) for j in range(self.N + 1)] for
                         i in range(self.N + 1)]
         self.sparse_generator = sparse.bmat(sparse_matrQ, "csr")
 
-        print("Sparse generator created")
+        # print("Sparse generator created")
 
     def _calc_matrG(self):
-        print("Calculating G")
+        # print("Calculating G")
 
         matrG = [None for _ in range(self.N)]
         matrQ = self.generator
@@ -717,12 +721,12 @@ class TwoPrioritiesQueueingSystem:
             tempG = np.dot(tempG, matrQ[i + 1][i])
             matrG[i] = tempG
 
-        print("G calculated")
+        # print("G calculated")
 
         return matrG
 
     def _calc_matrQover(self, matrG):
-        print("Calculating Q_over")
+        # print("Calculating Q_over")
 
         matrQ = self.generator
         matrQover = [[None for _ in range(self.N)] + [copy.deepcopy(matrQ[i][self.N])] for i in range(self.N + 1)]
@@ -730,12 +734,12 @@ class TwoPrioritiesQueueingSystem:
             for i in range(k + 1):
                 matrQover[i][k] = matrQ[i][k] + np.dot(matrQover[i][k + 1], matrG[k])
 
-        print("Q_over calculated")
+        # print("Q_over calculated")
 
         return matrQover
 
     def _calc_matrF(self, matrQover):
-        print("Calculating F")
+        # print("Calculating F")
 
         matrF = [None]
         for i in range(1, self.N + 1):
@@ -745,7 +749,7 @@ class TwoPrioritiesQueueingSystem:
             tempF = np.dot(tempF, la.inv(-matrQover[i][i]))
             matrF.append(tempF)
 
-        print("F calculated")
+        # print("F calculated")
 
         return matrF
 
@@ -764,11 +768,11 @@ class TwoPrioritiesQueueingSystem:
         matr_a = np.transpose(matr_a)
         p0 = np.transpose(la.solve(matr_a, matr_b))
 
-        print('\nChecking p_0 * Qover_{0, 0}')
-        print(np.dot(p0, matrQover[0][0]), '\n')
+        # print('\nChecking p_0 * Qover_{0, 0}')
+        # print(np.dot(p0, matrQover[0][0]), '\n')
 
-        print('\nChecking p_0 * matr_a')
-        print(np.dot(p0, np.transpose(matr_a)), '\n')
+        # print('\nChecking p_0 * matr_a')
+        # print(np.dot(p0, np.transpose(matr_a)), '\n')
 
         return p0
 
@@ -799,7 +803,7 @@ class TwoPrioritiesQueueingSystem:
             stationary_probas.append(np.dot(p0, matrF[i]))
 
         if self.check_probas(stationary_probas, verbose):
-            print("stationary probas calculated\n")
+            pass # print("stationary probas calculated\n")
         else:
             print("stationary probas calculated with error!\n", file=sys.stderr)
 
@@ -809,7 +813,7 @@ class TwoPrioritiesQueueingSystem:
         return stationary_probas
 
     def calc_stationary_probas_classic(self):
-        print("Calculating probas via pure formula")
+        # print("Calculating probas via pure formula")
         sol = system_solve(self.sparse_generator.toarray())
         ps = [[sol[:self.queries_stream.dim_ * (self.serv_stream.dim + 1)]]]
         prev = self.queries_stream.dim_ * (self.serv_stream.dim + 1)
@@ -821,17 +825,17 @@ class TwoPrioritiesQueueingSystem:
             prev = prev + cur
 
         if self.check_probas(ps):
-            print("stationary probas calculated\n")
+            pass # print("stationary probas calculated\n")
         else:
             print("stationary probas calculated with error!\n", file=sys.stderr)
 
         return ps
 
     def check_by_Q_multiplying(self, stationary_probas):
-        print("Checking probas by Q multiplying.")
-        print("Should contain zeros only!")
+        # print("Checking probas by Q multiplying.")
+        # print("Should contain zeros only!")
         ps = np.concatenate(stationary_probas, axis=1)
-        print(np.dot(ps, self.sparse_generator.toarray()))
+        # print(np.dot(ps, self.sparse_generator.toarray()))
 
     def check_probas(self, stationary_probas, verbose=True):
         sum = 0.0
@@ -1281,6 +1285,54 @@ class TwoPrioritiesQueueingSystem:
     def func_W_2(self, stationary_probas, t):
         return (self.func_tilde_W_2(stationary_probas, t) / self.W_2_inf)[0][0]
 
+    def avg_wait_time_1(self, stationary_probas):
+        b1 = 1 / self.serv_stream.avg_intensity
+        revSe = r_multiply_e(la.inv(-self.serv_stream.repres_matr))
+
+        sum1 = r_multiply_e(self.queries_stream.transition_matrices[0][1])
+        for k in range(2, self.n + 1):
+            sum1 += r_multiply_e(self.queries_stream.transition_matrices[0][k]) * sum([(j - 1) * b1 for j in range(2, min(self.N + 1, k) + 1)])
+
+        sum1 = np.dot(np.dot(stationary_probas[0],
+                             np.array(np.bmat([[self.I_W],
+                                               [np.zeros((self.queries_stream.dim_ * self.serv_stream.dim,
+                                                          self.queries_stream.dim_))]]))
+                             ),
+                      sum1)
+
+        sum2 =  np.zeros((self.queries_stream.dim_ * self.serv_stream.dim, 1))
+        for k in range(1, self.n + 1):
+            sump2 = np.zeros((self.serv_stream.dim, 1))
+            for j in range(1, min(self.N, k) + 1):
+                sump2 += revSe + self.e_M * (j - 1) * b1
+            sum2 += np.dot(kron(r_multiply_e(self.queries_stream.transition_matrices[0][k]),
+                                self.I_M),
+                           sump2)
+
+        sum2 = np.dot(np.dot(stationary_probas[0],
+                             np.array(np.bmat([[np.zeros((self.queries_stream.dim_,
+                                                          self.queries_stream.dim_ * self.serv_stream.dim))],
+                                               [self.I_WM]]))),
+                      sum2)
+
+        sum3 = np.zeros(sum1.shape)
+        for i in range(1, self.N):
+            for j in range(i + 1):
+                sump3 = 0.
+                for k in range(1, self.n + 1):
+                    rmul3 = np.zeros((self.serv_stream.dim, 1))
+                    for el in range(1, min(self.N - i, k) + 1):
+                        rmul3 += revSe + self.e_M * (i - j + el - 1) * b1
+
+                    sump3 += np.dot(kron(kron(r_multiply_e(self.queries_stream.transition_matrices[0][k]),
+                                              self.I_M),
+                                         e_col(ncr(j + self.timer_stream.dim - 1,
+                                                   self.timer_stream.dim - 1))), rmul3)
+                sum3 += np.dot(self.calc_pij(stationary_probas, i, j),
+                               sump3)
+        return 1 / (self.queries_stream.avg_intensity * self.W_1_inf) * (sum1 + sum2 + sum3)[0][0]
+
+
     def calc_characteristics(self, verbose=False):
         stationary_probas = self.calc_stationary_probas(verbose)
 
@@ -1327,6 +1379,9 @@ class TwoPrioritiesQueueingSystem:
 
         print("F_1(1) =", f1t1)
         print("F_2(1) =", f2t1)
+
+        w1 = self.avg_wait_time_1(stationary_probas)
+        print("w1 =", w1)
 
         self.check_by_Q_multiplying(stationary_probas)
 

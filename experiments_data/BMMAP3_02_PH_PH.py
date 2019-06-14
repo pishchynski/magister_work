@@ -10,12 +10,12 @@ class Bmmap302PhPh:
         self.test_matrD = np.array([[5.372, 0.036],
                                     [0.09772, 0.07778]]) * 4.319328938619707
 
-        self.test_q = 0.8
-        self.test_n = 3
+        self.test_qs = (0.8, 0.2)
+        self.test_ns = (5, 2)
 
-        self.priority_part = 0.7
+        self.priority_part = 0.9
 
-        self.test_N = 5
+        self.test_N = 10
         self.p_hp = 0.4
 
         # Server PH

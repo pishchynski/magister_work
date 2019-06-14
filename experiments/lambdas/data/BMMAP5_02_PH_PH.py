@@ -1,22 +1,22 @@
 import numpy as np
 
 
-class Bmmap304PhPh:
+class Bmmap502PhPh:
     def __init__(self, matrS_elem=20):
         # BMMAP
-        self.test_matrD_0 = np.array([[-86, 0.01],
-                                      [0.02, -2.76]]) * 0.973076224985
+        self.test_matrD_0 = np.array([[-5.408, 0.],
+                                      [0., -0.1755]]) * 0.103177562122822
 
-        self.test_matrD = np.array([[85, 0.99],
-                                    [0.2, 2.54]]) * 0.973076224985
+        self.test_matrD = np.array([[5.372, 0.036],
+                                    [0.09772, 0.07778]]) * 0.103177562122822
 
         self.test_qs = (0.8, 0.2)
         self.test_ns = (5, 2)
 
+        self.priority_part = 0.9
+
         self.test_N = 10
         self.p_hp = 0.4
-
-        self.priority_part = 0.9
 
         # Server PH
         self.test_vect_beta = np.array([[1., 0.]])

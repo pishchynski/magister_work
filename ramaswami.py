@@ -182,7 +182,7 @@ def calc_ramaswami_matrices(matr_S: np.ndarray, matr_tilde_S: np.ndarray, vect_b
                 for m in range(1, N + 1):
                     matr_A[m] = matr_Az[m]
 
-        print('Calculating P_1_i(beta)')
+        # print('Calculating P_1_i(beta)')
 
         for j in range(M - 1):
             a = [[]]
@@ -242,7 +242,7 @@ def calc_ramaswami_matrices(matr_S: np.ndarray, matr_tilde_S: np.ndarray, vect_b
         temp = copy.deepcopy(vect_beta)
         matr_P1[0] = temp
 
-        print('Calculating L_i(N, matr_tilde_S)')
+        # print('Calculating L_i(N, matr_tilde_S)')
 
         matr_L = get_matr_LzNT(matr_tilde_S, N)
     else:
