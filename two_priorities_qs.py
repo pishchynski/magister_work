@@ -803,7 +803,7 @@ class TwoPrioritiesQueueingSystem:
             stationary_probas.append(np.dot(p0, matrF[i]))
 
         if self.check_probas(stationary_probas, verbose):
-            pass # print("stationary probas calculated\n")
+            pass  # print("stationary probas calculated\n")
         else:
             print("stationary probas calculated with error!\n", file=sys.stderr)
 
@@ -825,7 +825,7 @@ class TwoPrioritiesQueueingSystem:
             prev = prev + cur
 
         if self.check_probas(ps):
-            pass # print("stationary probas calculated\n")
+            pass  # print("stationary probas calculated\n")
         else:
             print("stationary probas calculated with error!\n", file=sys.stderr)
 
@@ -1291,7 +1291,8 @@ class TwoPrioritiesQueueingSystem:
 
         sum1 = r_multiply_e(self.queries_stream.transition_matrices[0][1])
         for k in range(2, self.n + 1):
-            sum1 += r_multiply_e(self.queries_stream.transition_matrices[0][k]) * sum([(j - 1) * b1 for j in range(2, min(self.N + 1, k) + 1)])
+            sum1 += r_multiply_e(self.queries_stream.transition_matrices[0][k]) * sum(
+                [(j - 1) * b1 for j in range(2, min(self.N + 1, k) + 1)])
 
         sum1 = np.dot(np.dot(stationary_probas[0],
                              np.array(np.bmat([[self.I_W],
@@ -1300,7 +1301,7 @@ class TwoPrioritiesQueueingSystem:
                              ),
                       sum1)
 
-        sum2 =  np.zeros((self.queries_stream.dim_ * self.serv_stream.dim, 1))
+        sum2 = np.zeros((self.queries_stream.dim_ * self.serv_stream.dim, 1))
         for k in range(1, self.n + 1):
             sump2 = np.zeros((self.serv_stream.dim, 1))
             for j in range(1, min(self.N, k) + 1):
@@ -1332,6 +1333,32 @@ class TwoPrioritiesQueueingSystem:
                                sump3)
         return 1 / (self.queries_stream.avg_intensity * self.W_1_inf) * (sum1 + sum2 + sum3)[0][0]
 
+    def avg_wait_time_2(self, stationary_probas):
+        revSe = r_multiply_e(la.inv(-self.serv_stream.repres_matr))
+        b1 = 1 / self.serv_stream.avg_intensity
+
+        sum = 0.
+        for i in range(1, self.N + 1):
+            for j in range(1, i + 1):
+                mul1 = self.calc_pij(stationary_probas, i, j)
+                mul2 = kron(kron(e_col(self.queries_stream.dim_),
+                                 self.I_M),
+                            r_multiply_e(self.ramatrL[self.N - i + j][self.N - i]))
+                mul3 = revSe + self.e_M * (i - j) * b1
+
+                sum += np.dot(np.dot(mul1,
+                                     mul2),
+                              mul3)[0][0]
+
+        sumGamma = 0.
+        for i in range(1, self.N + 1):
+            for j in range(1, i + 1):
+                sumGamma += np.dot(self.calc_pij(stationary_probas, i, j),
+                                   kron(self.e_WM,
+                                        r_multiply_e(self.ramatrL[self.N - i + j][self.N - i])))[0][0]
+
+        sum = (1. - self.p_hp) / (sumGamma * self.W_2_inf) * sum
+        return np.array(sum, dtype=float)[0][0]
 
     def calc_characteristics(self, verbose=False):
         stationary_probas = self.calc_stationary_probas(verbose)
@@ -1382,6 +1409,9 @@ class TwoPrioritiesQueueingSystem:
 
         w1 = self.avg_wait_time_1(stationary_probas)
         print("w1 =", w1)
+
+        w2 = self.avg_wait_time_2(stationary_probas)
+        print("w2 =", w2)
 
         self.check_by_Q_multiplying(stationary_probas)
 
