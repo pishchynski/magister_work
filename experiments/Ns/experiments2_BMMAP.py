@@ -25,15 +25,15 @@ def main():
     lines = ["-k", "--k", "-.k"]
     linecycler = cycle(lines)
 
-    PRINT_TITLE=True
+    PRINT_TITLE=False
 
     test_data_Poisson_initial = poisson.Bmmap5PoissonPhPh()
     test_data_Poisson_initial.test_matrD *= 8.
     test_data_Poisson_initial.test_matrD_0 *= 8.
 
     test_data_Poisson = poisson.Bmmap5PoissonPhPh()
-    test_data_Poisson.test_matrD *= 8.091697572589364
-    test_data_Poisson.test_matrD_0 *= 8.091697572589364
+    test_data_Poisson.test_matrD *= 8.
+    test_data_Poisson.test_matrD_0 *= 8.
 
     test_data_02_initial = cor02.Bmmap502PhPh()
     test_data_02_initial.test_matrD *= 8.
@@ -70,7 +70,7 @@ def main():
     table_cor_02 = []
     table_cor_04 = []
 
-    for nextN in tqdm(range(1, 31)):
+    for nextN in tqdm(range(1, 41)):
         test_data_Poisson.test_N = nextN
 
         test_data_02.test_N = nextN

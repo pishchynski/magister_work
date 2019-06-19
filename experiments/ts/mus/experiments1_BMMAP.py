@@ -1,5 +1,6 @@
 import datetime
 import os
+from itertools import cycle
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -19,7 +20,10 @@ def main():
     if not os.path.exists("tables"):
         os.makedirs("tables")
 
-    PRINT_TITLE = True
+    lines = ["-k", "--k", "-.k"]
+    linecycler = cycle(lines)
+
+    PRINT_TITLE = False
 
     test_data_less_mu_initial = cor02.Bmmap502PhPh(matrS_elem=8.)
     test_data_less_mu = cor02.Bmmap502PhPh(matrS_elem=8.)
@@ -41,18 +45,17 @@ def main():
     table_equal_mu = []
     table_larger_mu = []
 
-    coef = 0.25  # as we have \lambda = 32 and want it to be 8
     ts = []
 
     for t in tqdm(np.linspace(0.01, 4., 40)):
-        test_data_less_mu.test_matrD = test_data_less_mu_initial.test_matrD * coef
-        test_data_less_mu.test_matrD_0 = test_data_less_mu_initial.test_matrD_0 * coef
+        test_data_less_mu.test_matrD = test_data_less_mu_initial.test_matrD
+        test_data_less_mu.test_matrD_0 = test_data_less_mu_initial.test_matrD_0
 
-        test_data_equal_mu.test_matrD = test_data_equal_mu_initial.test_matrD * coef
-        test_data_equal_mu.test_matrD_0 = test_data_equal_mu_initial.test_matrD_0 * coef
+        test_data_equal_mu.test_matrD = test_data_equal_mu_initial.test_matrD
+        test_data_equal_mu.test_matrD_0 = test_data_equal_mu_initial.test_matrD_0
 
-        test_data_larger_mu.test_matrD = test_data_larger_mu_initial.test_matrD * coef
-        test_data_larger_mu.test_matrD_0 = test_data_larger_mu_initial.test_matrD_0 * coef
+        test_data_larger_mu.test_matrD = test_data_larger_mu_initial.test_matrD
+        test_data_larger_mu.test_matrD_0 = test_data_larger_mu_initial.test_matrD_0
 
         qs1 = qs.TwoPrioritiesQueueingSystem(test_data_less_mu)
         stationary_probas1 = qs1.calc_stationary_probas(False)
@@ -79,10 +82,10 @@ def main():
 
         table_larger_mu.append([t, W1s["larger_mu"][-1], W2s["larger_mu"][-1]])
 
-    plt.plot(ts, W1s["less_mu"])
-    plt.plot(ts, W1s["equal_mu"])
-    plt.plot(ts, W1s["larger_mu"])
-    plt.ylabel(r'$W_1$')
+    plt.plot(ts, W1s["less_mu"], next(linecycler))
+    plt.plot(ts, W1s["equal_mu"], next(linecycler))
+    plt.plot(ts, W1s["larger_mu"], next(linecycler))
+    plt.ylabel(r'$W_1(t)$')
     plt.xlabel(r'$t$')
     plt.legend((str.format("µ={0}",
                            round(qs1.serv_stream.avg_intensity, 3)),
@@ -100,10 +103,10 @@ def main():
                 bbox_inches='tight')
     plt.close()
 
-    plt.plot(ts, W2s["less_mu"])
-    plt.plot(ts, W2s["equal_mu"])
-    plt.plot(ts, W2s["larger_mu"])
-    plt.ylabel(r'$W_2$')
+    plt.plot(ts, W2s["less_mu"], next(linecycler))
+    plt.plot(ts, W2s["equal_mu"], next(linecycler))
+    plt.plot(ts, W2s["larger_mu"], next(linecycler))
+    plt.ylabel(r'$W_2(t)$')
     plt.xlabel(r'$t$')
     plt.legend((str.format("µ={0}",
                            round(qs1.serv_stream.avg_intensity, 3)),

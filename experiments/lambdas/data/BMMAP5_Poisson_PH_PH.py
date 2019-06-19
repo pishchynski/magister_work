@@ -4,10 +4,10 @@ import numpy as np
 class Bmmap5PoissonPhPh:
     def __init__(self, matrS_elem=20):
         # BMMAP
-        self.test_matrD_0 = np.array([[-1.]]) / 2.4234253530065053
-        self.test_matrD = np.array([[1.]]) / 2.4234253530065053
+        self.test_matrD_0 = np.array([[-0.7655171157384633]])
+        self.test_matrD = np.array([[0.7655171157384633]])
 
-        self.priority_part = 0.9
+        self.priority_part = 0.1
 
         self.test_qs = (0.8, 0.2)
         self.test_ns = (5, 2)

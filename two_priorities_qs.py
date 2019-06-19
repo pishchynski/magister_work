@@ -818,7 +818,7 @@ class TwoPrioritiesQueueingSystem:
         ps = [[sol[:self.queries_stream.dim_ * (self.serv_stream.dim + 1)]]]
         prev = self.queries_stream.dim_ * (self.serv_stream.dim + 1)
         for i in range(1, self.N + 1):
-            cur = self.queries_stream.dim_ * self.serv_stream.dim * np.sum((ncr(j + self.timer_stream.dim - 1,
+            cur = self.queries_stream.dim_ * self.serv_stream.dim * sum((ncr(j + self.timer_stream.dim - 1,
                                                                                 self.timer_stream.dim - 1) for j in
                                                                             range(i + 1)))
             ps.append([sol[prev: prev + cur]])
@@ -888,6 +888,35 @@ class TwoPrioritiesQueueingSystem:
         return np.sum(
             [np.sum([j * self.calc_buffer_i_queries_j_nonprior(stationary_probas, i, j) for j in range(1, i + 1)]) for i
              in range(1, self.N + 1)])
+
+    def calc_avg_buffer_prior_queries_num(self, stationary_probas):
+        return self.calc_avg_buffer_queries_num(stationary_probas) - self.calc_avg_buffer_nonprior_queries_num(stationary_probas)
+
+    def calc_sd_buffer_queries_num(self, stationary_probas):
+        L = self.calc_avg_buffer_queries_num(stationary_probas)
+
+        sum = 0.
+        for i in range(1, self.N + 1):
+            sum += i * i * self.calc_buffer_i_queries(stationary_probas, i)
+        return sqrt(sum - L * L)
+
+    def calc_sd_buffer_prior_queries_num(self, stationary_probas):
+        L_prior = self.calc_avg_buffer_prior_queries_num(stationary_probas)
+
+        phis = [None]
+        for i in range(1, self.N + 1):
+            phi = self.calc_buffer_i_queries_j_nonprior(stationary_probas, i, 0)
+            for j in range(i + 1, self.N + 1):
+                phi += self.calc_buffer_i_queries_j_nonprior(stationary_probas, j, j - i)
+            phis.append(phi)
+
+        sum = 0.
+        for i in range(1, self.N + 1):
+            sum += i * i * phis[i]
+
+        return sqrt(sum - L_prior * L_prior)
+
+
 
     def deprecated_calc_query_lost_p_alg(self, stationary_probas):
         p_loss = np.dot(stationary_probas[0],
@@ -1381,6 +1410,18 @@ class TwoPrioritiesQueueingSystem:
         avg_buffer_nonprior_num = self.calc_avg_buffer_nonprior_queries_num(stationary_probas)
         if verbose:
             print("q_j =", avg_buffer_nonprior_num)
+
+        avg_buffer_prior_num = self.calc_avg_buffer_prior_queries_num(stationary_probas)
+        if verbose:
+            print("L_buf^prior =", avg_buffer_prior_num)
+
+        sd_buffer_queries_num = self.calc_sd_buffer_queries_num(stationary_probas)
+        if verbose:
+            print(r"\sigma =", sd_buffer_queries_num)
+
+        sd_buffer_prior_queries_num = self.calc_sd_buffer_prior_queries_num(stationary_probas)
+        if verbose:
+            print(r"\sigma_prior =", sd_buffer_prior_queries_num)
 
         p_loss = self.calc_query_lost_p(stationary_probas)
         if verbose:

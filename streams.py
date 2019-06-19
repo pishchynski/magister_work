@@ -262,6 +262,8 @@ class BMMAPStream:
                         / batch_intensity - 1 / batch_intensity ** 2
                         for matr_cal_D, batch_intensity in zip(matr_cal_D_k, self.batch_intensity_t)]
 
+        self.c_var = [self.batch_intensity_t[t] * sqrt(dispersion_t[t]) for t in range(t_num)]
+
         self.c_cor = [((r_multiply_e(np.dot(np.dot(np.dot(theta,
                                                           la.inv(- matrD_0 - matr_cal_D[0])),
                                                    matr_hat_D[0]),
