@@ -12,8 +12,8 @@ class Map02PhPh:
 
         self.priority_part = 0.99999999999
 
-        self.test_q = 0.8
-        self.test_n = 1
+        self.test_qs = (0.8, 0.8)
+        self.test_ns = (1, 1)
 
         self.test_N = 5
         self.p_hp = 0.4

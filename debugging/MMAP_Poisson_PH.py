@@ -7,8 +7,8 @@ class MmapPoissonPh:
         self.test_matrD_0 = np.array([[-17.75229508197786]])
         self.test_matrD = np.array([[17.75229508197786]])
 
-        self.test_q = 0.8
-        self.test_n = 1
+        self.test_qs = (0.8, 0.8)
+        self.test_ns = (1, 1)
 
         self.priority_part = 0.7
 

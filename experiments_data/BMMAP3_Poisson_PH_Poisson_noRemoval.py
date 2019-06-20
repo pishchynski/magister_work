@@ -7,8 +7,8 @@ class Bmmap3PoissonPhPoissonNoRemoval:
         self.test_matrD_0 = np.array([[-17.2743362832]])
         self.test_matrD = np.array([[17.2743362832]])
 
-        self.test_q = 0.8
-        self.test_n = 3
+        self.test_qs = (0.8, 0.8)
+        self.test_ns = (3, 3)
 
         self.test_N = 5
         self.p_hp = 10. ** (-5)

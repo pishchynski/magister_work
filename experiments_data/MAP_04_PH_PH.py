@@ -10,8 +10,8 @@ class Map04PhPh:
         self.test_matrD = np.array([[85, 0.99],
                                     [0.2, 2.54]]) * 1.80258382661
 
-        self.test_q = 0.8
-        self.test_n = 1
+        self.test_qs = (0.8, 0.8)
+        self.test_ns = (1, 1)
 
         self.priority_part = 0.99999999999
 
