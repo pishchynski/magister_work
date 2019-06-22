@@ -10,46 +10,6 @@ import numpy as np
 import scipy.linalg as la
 import scipy.sparse.linalg as spla
 
-characteristics_loc = ["Загруженность системы",
-                       "Пропускная способность системы",
-                       "Среднее число запросов в системе",
-                       "Дисперсия числа запросов в системе",
-                       "Вероятность того, что прибор 1 исправен и обслуживает запрос",
-                       """Вероятность того, что прибор 1 в неисправном состоянии, а прибор 2
-                          обслуживает запрос""",
-                       """Вероятность того, что в системе есть запросы, прибор1 в неисправном
-                          состоянии и идет переключение с этого прибора на прибор 2 (при этом оба
-                          прибора не обслуживают заявки)""",
-                       """Вероятность того, что в системе есть запросы, прибор 1 в исправном
-                          состоянии и идет переключение с прибора 2 на прибор 1 (при этом прибор 2
-                          продолжает обслуживать запросы)""",
-                       """Вероятность того, что прибор 1 доступен (средняя доля времени, в течение которого
-                          прибор 1 доступен)""",
-                       """Вероятность того, что прибор 1 недоступен, а прибор 2 доступен (средняя доля времени,
-                          в течение которого прибор 2 доступен)""",
-                       """Вероятность того, что оба прибора недоступны, т.е. идет переключение с прибора 1
-                          на прибор 2 (средняя доля времени, в течение которого оба прибора недоступны)""",
-                       """Среднее число переключений с прибора 1 на прибор 2 в единицу времени""",
-                       """Среднее число переключений с прибора 2 на прибор 1 в единицу времени""",
-                       "Среднее время нахождения заявки в системе",
-                       "Среднее совокупное число переключений в единицу времени"]
-
-characteristics_names = ['system_load',
-                         'system_capacity',
-                         'avg_queries_num',
-                         'queries_num_dispersion',
-                         'prob_1_work_serves',
-                         'prob_1_broken_2_serves',
-                         'prob_1_broken_switch_1_2',
-                         'prob_1_work_switch_2_1',
-                         'prob_1_available',
-                         'prob_1_unavail_2_avail',
-                         'prob_1_2_unavail',
-                         'avg_switch_1_2_num',
-                         'avg_switch_2_1_num',
-                         'avg_service_time',
-                         'avg_switch_num']
-
 
 def kron(A: object, B: object) -> object:
     """
@@ -200,6 +160,13 @@ def matr_print(matr, file=sys.stdout):
 
 
 def linux_check_cpu_temperature(notify=True):
+    """
+    Was used on my old laptop with cooling system defect.
+    Works in Linux systems only
+
+    :param notify:
+    :return:
+    """
     try:
         sleep_flag = False
         while True:
@@ -220,12 +187,30 @@ def linux_check_cpu_temperature(notify=True):
 
 
 def copy_matrix_block(dest, src, m_pos, n_pos):
+    """
+    Copies matrix block into position (up-left) specified
+
+    :param dest: np.array to write block into
+    :param src: np.array block which has to be written
+    :param m_pos: int row in destination matrix
+    :param n_pos: int column in destination matrix
+    :return: None
+    """
+
     m_shift = src.shape[0]
     n_shift = src.shape[1]
     dest[m_pos: m_pos + m_shift, :][:, n_pos: n_pos + n_shift] = src
 
 
 def ncr(n, r):
+    """
+    Calculates number of combinations ($C_{n}^{r}$)
+
+    :param n: int
+    :param r: int
+    :return:
+    """
+
     r = min(r, n - r)
     numer = reduce(op.mul, range(n, n - r, -1), 1)
     denom = reduce(op.mul, range(1, r + 1), 1)
@@ -234,7 +219,7 @@ def ncr(n, r):
 
 def limdiv(numer, denom):
     """
-    Divides more 'safely'. e.g. limdiv(0, 0) == 1
+    Integer division with 0 // 0 == 1
 
     :param numer: int numerator
     :param denom: int denominator
@@ -248,6 +233,13 @@ def limdiv(numer, denom):
 
 
 def to_latex_table(elements):
+    """
+    Creates latex table string with newlines on every 6th element
+
+    :param elements: np.array of shape (1, n)
+    :return: str
+    """
+
     latex_table = ''
     for i, element in enumerate(elements[0]):
         if i % 6 == 0:
