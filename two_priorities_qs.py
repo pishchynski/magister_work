@@ -36,6 +36,7 @@ class TwoPrioritiesQueueingSystem:
                                                 [self.timer_stream.repres_matr_0,
                                                  self.timer_stream.repres_matr]]),
                                        dtype=float)
+
         self.I_WM = np.eye(self.queries_stream.dim_ * self.serv_stream.dim)
         self.I_W = np.eye(self.queries_stream.dim_)
         self.I_M = np.eye(self.serv_stream.dim)
@@ -55,7 +56,7 @@ class TwoPrioritiesQueueingSystem:
         self.n = max(self.ns)
 
         self.N = experiment_data.test_N  # buffer capacity
-        self.ramatrL, self.ramatrA, self.ramatrP = self._calc_ramaswami_matrices(0, self.N)
+        self.ramatrL, self.ramatrA, self.ramatrP = self._calc_ramaswami_matrices(0, self.N) # Ramaswami matrices
         self.calI_1 = [np.array(np.bmat([[kron(kron(self.I_W,
                                                     e_col(self.serv_stream.dim)),
                                                e_col(ncr(self.timer_stream.dim - 1 + j,
@@ -156,7 +157,7 @@ class TwoPrioritiesQueueingSystem:
         """
         Calculates Ramaswami matrices L, A and P.
 
-        :param start:
+        :param start: not implemented, assume start = 0
         :param end:
         :return: tuple of matrices L, A, P
         """
@@ -213,7 +214,6 @@ class TwoPrioritiesQueueingSystem:
         matrQ_0k = [self._calc_Q_00()]
 
         for k in range(1, self.N):
-            # block00 = np.zeros(self.queries_stream.transition_matrices[0][1].shape)
             if k + 1 > self.n:
                 block00 = kron(np.zeros(self.queries_stream.transition_matrices[0][1].shape),
                                # this shape suits because all D_{i}^{1} have same shape
@@ -222,7 +222,6 @@ class TwoPrioritiesQueueingSystem:
                 block00 = kron(self.queries_stream.transition_matrices[0][k + 1],
                                self.serv_stream.repres_vect)
 
-            # block10 = np.zeros(self.queries_stream.transition_matrices[0][1].shape)
             if k > self.n:
                 block10 = kron(np.zeros(self.queries_stream.transition_matrices[0][1].shape),
                                # this shape suits because all D_{i}^{1} have same shape
@@ -255,7 +254,6 @@ class TwoPrioritiesQueueingSystem:
             for i in range(1, k):
                 ramatrP_mul = np.dot(ramatrP_mul, self.ramatrP[-1][i])
 
-            # last_block0 = np.zeros((1, 1))
             if k + 1 > self.n:
                 last_block0 = kron(kron(np.zeros(self.queries_stream.transition_matrices[1][1].shape),
                                         self.serv_stream.repres_vect),
@@ -265,7 +263,6 @@ class TwoPrioritiesQueueingSystem:
                                         self.serv_stream.repres_vect),
                                    ramatrP_mul)
 
-            # last_block1 = np.zeros((1, 1))
             if k > self.n:
                 last_block1 = kron(kron(np.zeros(self.queries_stream.transition_matrices[1][1].shape),
                                         self.I_M),
@@ -299,7 +296,6 @@ class TwoPrioritiesQueueingSystem:
 
         # print("Calculating Q_0N")
 
-        # block00 = np.zeros((1, 1))
         if self.N + 1 > self.n:
             block00 = kron(np.zeros(self.queries_stream.transition_matrices[0][1].shape),
                            self.serv_stream.repres_vect)
@@ -310,7 +306,6 @@ class TwoPrioritiesQueueingSystem:
                 block00 += kron(self.queries_stream.transition_matrices[0][i],
                                 self.serv_stream.repres_vect)
 
-        # block10 = np.zeros((1, 1))
         if self.N > self.n:
             block10 = kron(np.zeros(self.queries_stream.transition_matrices[0][1].shape),
                            self.I_M)
@@ -345,7 +340,6 @@ class TwoPrioritiesQueueingSystem:
         for i in range(1, self.N):
             ramatrP_mul = np.dot(ramatrP_mul, self.ramatrP[self.N][i])
 
-        # last_block0 = np.zeros((1, 1))
         if self.N + 1 > self.n:
             last_block0 = kron(kron(np.zeros(self.queries_stream.transition_matrices[1][1].shape),
                                     self.serv_stream.repres_vect),
@@ -359,7 +353,6 @@ class TwoPrioritiesQueueingSystem:
                                          self.serv_stream.repres_vect),
                                     ramatrP_mul)
 
-        # last_block1 = np.zeros((1, 1))
         if self.N > self.n:
             last_block1 = kron(kron(np.zeros(self.queries_stream.transition_matrices[1][1].shape),
                                     self.I_M),
@@ -693,6 +686,8 @@ class TwoPrioritiesQueueingSystem:
         # print("Generator finalized")
         # print("Creating sparse generator")
 
+        # Sparse generator was added to find stationary distribution by solving linear system.
+        # Not needed for recurrent algorithm
         sparse_matrQ = [[None if matrQ[i][j] is None else sparse.csr_matrix(matrQ[i][j]) for j in range(self.N + 1)] for
                         i in range(self.N + 1)]
         self.sparse_generator = sparse.bmat(sparse_matrQ, "csr")
@@ -754,6 +749,10 @@ class TwoPrioritiesQueueingSystem:
         return matrF
 
     def _calc_p0(self, matrF, matrQover):
+        """
+        Calculates p_0 stationary probabilities vector
+        """
+
         matr_a = copy.deepcopy(matrQover[0][0])
         vect_eaR = e_col(matrF[1].shape[0])
         for i in range(1, self.N + 1):
@@ -777,6 +776,12 @@ class TwoPrioritiesQueueingSystem:
         return p0
 
     def calc_stationary_probas(self, verbose=True):
+        """
+        Calculates stationary distribution
+
+        :param verbose:
+        :return:
+        """
         matrG = self._calc_matrG()
 
         if verbose:
@@ -813,6 +818,12 @@ class TwoPrioritiesQueueingSystem:
         return stationary_probas
 
     def calc_stationary_probas_classic(self):
+        """
+        Calculates stationary distribution by solving linear system
+
+        :return:
+        """
+
         # print("Calculating probas via pure formula")
         sol = system_solve(self.sparse_generator.toarray())
         ps = [[sol[:self.queries_stream.dim_ * (self.serv_stream.dim + 1)]]]
@@ -852,18 +863,39 @@ class TwoPrioritiesQueueingSystem:
         return 1 - self._eps_proba < sum < 1 + self._eps_proba
 
     def calc_system_empty_proba(self, stationary_probas):
+        """
+        Performance characteristic: probability that system is empty
+
+        :param stationary_probas:
+        :return:
+        """
         r_multiplier = np.array(np.bmat([[e_col(self.queries_stream.dim_)],
                                          [np.zeros((self.queries_stream.dim_ * self.serv_stream.dim, 1))]]),
                                 dtype=float)
         return np.dot(stationary_probas[0], r_multiplier)[0][0]
 
     def calc_system_single_query_proba(self, stationary_probas):
+        """
+        Performance characteristic: probability that system has single query and it's serving already
+
+        :param stationary_probas:
+        :return:
+        """
         r_multiplier = np.array(np.bmat([[np.zeros((self.queries_stream.dim_, 1))],
                                          [e_col(self.queries_stream.dim_ * self.serv_stream.dim)]]),
                                 dtype=float)
         return np.dot(stationary_probas[0], r_multiplier)[0][0]
 
     def calc_buffer_i_queries_j_nonprior(self, stationary_probas, i, j):
+        """
+        Performance characteristic: probability that buffer contains i queries, j of them are non-priority
+
+        :param stationary_probas:
+        :param i:
+        :param j:
+        :return:
+        """
+
         mulW_M = self.queries_stream.dim_ * self.serv_stream.dim
         block0_size = int(mulW_M * np.sum([ncr(l + self.timer_stream.dim - 1,
                                                self.timer_stream.dim - 1) for l in range(j)]))
@@ -879,20 +911,52 @@ class TwoPrioritiesQueueingSystem:
                       r_multiplier)[0][0]
 
     def calc_buffer_i_queries(self, stationary_probas, i):
+        """
+        Performance characteristic: probability that buffer contains i queries
+
+        :param stationary_probas:
+        :param i:
+        :return:
+        """
         return np.sum([self.calc_buffer_i_queries_j_nonprior(stationary_probas, i, j) for j in range(i + 1)])
 
     def calc_avg_buffer_queries_num(self, stationary_probas):
+        """
+        Performance characteristic: average queries in buffer number
+
+        :param stationary_probas:
+        :return:
+        """
+
         return np.sum([i * self.calc_buffer_i_queries(stationary_probas, i) for i in range(1, self.N + 1)])
 
     def calc_avg_buffer_nonprior_queries_num(self, stationary_probas):
+        """
+        Performance characteristic: average non-priority queries in buffer number
+
+        :param stationary_probas:
+        :return:
+        """
         return np.sum(
             [np.sum([j * self.calc_buffer_i_queries_j_nonprior(stationary_probas, i, j) for j in range(1, i + 1)]) for i
              in range(1, self.N + 1)])
 
     def calc_avg_buffer_prior_queries_num(self, stationary_probas):
+        """
+        Performance characteristic: average priority queries in buffer number
+
+        :param stationary_probas:
+        :return:
+        """
         return self.calc_avg_buffer_queries_num(stationary_probas) - self.calc_avg_buffer_nonprior_queries_num(stationary_probas)
 
     def calc_sd_buffer_queries_num(self, stationary_probas):
+        """
+        Performance characteristic: standard deviation of queries in buffer number
+
+        :param stationary_probas:
+        :return:
+        """
         L = self.calc_avg_buffer_queries_num(stationary_probas)
 
         sum = 0.
@@ -901,6 +965,13 @@ class TwoPrioritiesQueueingSystem:
         return sqrt(sum - L * L)
 
     def calc_sd_buffer_prior_queries_num(self, stationary_probas):
+        """
+        Performance characteristic: standard deviation of priority queries in buffer number
+
+        :param stationary_probas:
+        :return:
+        """
+
         L_prior = self.calc_avg_buffer_prior_queries_num(stationary_probas)
 
         phis = [None]
@@ -917,118 +988,13 @@ class TwoPrioritiesQueueingSystem:
         return sqrt(sum - L_prior * L_prior)
 
 
-
-    def deprecated_calc_query_lost_p_alg(self, stationary_probas):
-        p_loss = np.dot(stationary_probas[0],
-                        np.array(np.bmat([[self.I_W],
-                                          [kron(self.O_W,
-                                                e_col(self.serv_stream.dim))]]),
-                                 dtype=float))
-
-        d_sum_1 = (-self.N - 1) * r_multiply_e(self.queries_stream.matrD_0)
-
-        for k in range(1, self.N + 2):
-            if k <= self.n:
-                d_sum_1 += (k - self.N - 1) * r_multiply_e(
-                    self.queries_stream.transition_matrices[0][k] + self.queries_stream.transition_matrices[1][k])
-
-        p_loss = np.dot(p_loss, d_sum_1)  # First addend
-
-        p_loss_2 = np.dot(stationary_probas[0],
-                          np.array(np.bmat([[self.O_W],
-                                            [kron(self.I_W,
-                                                  e_col(self.serv_stream.dim))]]),
-                                   dtype=float))
-
-        d_sum_2 = (-self.N) * r_multiply_e(self.queries_stream.matrD_0)
-
-        for k in range(1, self.N + 1):
-            if k <= self.n:
-                d_sum_2 += (k - self.N) * r_multiply_e(
-                    self.queries_stream.transition_matrices[0][k] + self.queries_stream.transition_matrices[1][k])
-
-        p_loss += np.dot(p_loss_2, d_sum_2)  # added second addend
-
-        r_sum = np.dot(stationary_probas[1],
-                       kron(kron(self.I_W,
-                                 e_col(self.serv_stream.dim)),
-                            e_col(np.sum([ncr(j + self.timer_stream.dim - 1,
-                                              self.timer_stream.dim - 1) for j in range(2)]))))
-        d_sum_3 = (1 - self.N) * r_multiply_e(self.queries_stream.matrD_0)
-        for k in range(1, self.N):
-            if k <= self.n:
-                d_sum_3 += (k - self.N + 1) * r_multiply_e(
-                    self.queries_stream.transition_matrices[0][k] + self.queries_stream.transition_matrices[1][k])
-
-        r_sum = np.dot(r_sum, d_sum_3)
-
-        for i in range(2, self.N):
-            r_sum_temp = np.dot(stationary_probas[i],
-                                kron(kron(self.I_W,
-                                          e_col(self.serv_stream.dim)),
-                                     e_col(np.sum([ncr(j + self.timer_stream.dim - 1,
-                                                       self.timer_stream.dim - 1) for j in range(i + 1)]))))
-            d_sum = (i - self.N) * r_multiply_e(self.queries_stream.matrD_0)
-            for k in range(1, self.N - i + 1):
-                if k <= self.n:
-                    d_sum += (k - self.N + i) * r_multiply_e(self.queries_stream.transition_matrices[0][k] +
-                                                             self.queries_stream.transition_matrices[1][k])
-            r_sum += np.dot(r_sum_temp, d_sum)
-
-        p_loss += r_sum  # Final sum
-        p_loss = 1 - (1 / self.queries_stream.avg_intensity) * p_loss[0][0]
-
-        return p_loss
-
-    def deprecated_calc_query_lost_p(self, stationary_probas):
-        p_loss = np.dot(stationary_probas[0],
-                        np.array(np.bmat([[np.zeros((self.queries_stream.dim_, self.serv_stream.dim))],
-                                          [kron(e_col(self.queries_stream.dim_),
-                                                self.I_M)]]),
-                                 dtype=float))  # checked
-        r_sum = np.dot(stationary_probas[1],
-                       kron(kron(e_col(self.queries_stream.dim_),
-                                 self.I_M),
-                            e_col(np.sum([ncr(j + self.timer_stream.dim - 1,
-                                              self.timer_stream.dim - 1) for j in range(2)]))))
-        for i in range(2, self.N + 1):
-            r_sum += np.dot(stationary_probas[i],
-                            kron(kron(e_col(self.queries_stream.dim_),
-                                      self.I_M),
-                                 e_col(np.sum([ncr(j + self.timer_stream.dim - 1,
-                                                   self.timer_stream.dim - 1) for j in range(i + 1)]))))
-
-        p_loss = p_loss + r_sum
-        p_loss = np.dot(p_loss, self.serv_stream.repres_matr_0)
-        p_loss = 1 - (1 / self.queries_stream.avg_intensity) * p_loss[0][0]
-
-        return p_loss
-
-    def deprecated_calc_query_lost_p(self, stationary_probas):
-        p_loss = np.dot(stationary_probas[0],
-                        np.array(np.bmat([[np.zeros((self.queries_stream.dim_, self.serv_stream.dim))],
-                                          [kron(e_col(self.queries_stream.dim_),
-                                                self.I_M)]]),
-                                 dtype=float))  # checked
-        r_sum = np.dot(stationary_probas[1],
-                       kron(kron(e_col(self.queries_stream.dim_),
-                                 self.I_M),
-                            e_col(np.sum([ncr(j + self.timer_stream.dim - 1,
-                                              self.timer_stream.dim - 1) for j in range(2)]))))
-        for i in range(2, self.N + 1):
-            r_sum += np.dot(stationary_probas[i],
-                            kron(kron(e_col(self.queries_stream.dim_),
-                                      self.I_M),
-                                 e_col(np.sum([ncr(j + self.timer_stream.dim - 1,
-                                                   self.timer_stream.dim - 1) for j in range(i + 1)]))))
-
-        p_loss = p_loss + r_sum
-        p_loss = np.dot(p_loss, self.serv_stream.repres_matr_0)
-        p_loss = 1 - (1 / self.queries_stream.avg_intensity) * p_loss[0][0]
-
-        return p_loss
-
     def calc_query_lost_p(self, stationary_probas):
+        """
+        Performance characteristic: probability that query is lost because of buffer is full
+
+        :param stationary_probas:
+        :return:
+        """
         p_loss = np.dot(stationary_probas[0],
                         np.array(np.bmat([[np.zeros((self.queries_stream.dim_, self.serv_stream.dim))],
                                           [kron(e_col(self.queries_stream.dim_),
@@ -1135,6 +1101,12 @@ class TwoPrioritiesQueueingSystem:
         return (sum1 + sum2 + sum3)[0][0]
 
     def calc_query_lost_ps_buffer_full(self, stationary_probas):
+        """
+        Performance characteristic: probability that query (priority, non-priority, any) is lost because of buffer is full
+
+        :param stationary_probas:
+        :return: ([probability priority query is lost, probability non-priority query is lost], probability any query is lost)
+        """
         P_losses = []
         for i in range(2):
             P_losses.append(1 - (1 / self.queries_stream.avg_intensity_t[i]) * self.__calc_query_lost_ps_buffer_part_D(
@@ -1150,6 +1122,12 @@ class TwoPrioritiesQueueingSystem:
         return P_losses, p_loss_alg
 
     def calc_nonprior_query_lost_timer(self, stationary_probas):
+        """
+        Performance characteristic: probability that non-priority query is lost due to timer click
+
+        :param stationary_probas:
+        :return:
+        """
         p_loss = np.dot(stationary_probas[1],
                         self.calI_L[1])
         for i in range(2, self.N + 1):
@@ -1205,7 +1183,7 @@ class TwoPrioritiesQueueingSystem:
 
     def func_tilde_W_1(self, stationary_probas, t):
         """
-        Probability that query came into QS as a prior and its waiting time < t
+        Probability that query came into QS as a priority and its waiting time < t
         """
         matrAs = self.matrAs
 
@@ -1215,7 +1193,6 @@ class TwoPrioritiesQueueingSystem:
             for j in range(2, min(self.N + 1, k) + 1):
                 beta_temp = np.concatenate(
                     (self.serv_stream.repres_vect, np.zeros((1, (j - 2) * self.serv_stream.dim))), axis=1)
-                # exp_temp = m_exp(matrAs[j - 2], t)
                 exp_temp = la.expm(matrAs[j - 2] * t)
                 rmul1 += np.dot(np.dot(beta_temp,
                                        (np.eye(exp_temp.shape[0]) - exp_temp)),
@@ -1273,6 +1250,13 @@ class TwoPrioritiesQueueingSystem:
         return prob
 
     def func_tilde_W_2(self, stationary_probas, t):
+        """
+        Probability that query came into QS as a non-priority, became priority and its waiting time < t
+
+        :param stationary_probas:
+        :param t:
+        :return:
+        """
         matrAs = self.matrAs
 
         sum = 0.
@@ -1315,6 +1299,12 @@ class TwoPrioritiesQueueingSystem:
         return (self.func_tilde_W_2(stationary_probas, t) / self.W_2_inf)[0][0]
 
     def avg_wait_time_1(self, stationary_probas):
+        """
+        Average waiting time for initially priority queries
+
+        :param stationary_probas:
+        :return:
+        """
         b1 = 1 / self.serv_stream.avg_intensity
         revSe = r_multiply_e(la.inv(-self.serv_stream.repres_matr))
 
@@ -1363,6 +1353,12 @@ class TwoPrioritiesQueueingSystem:
         return 1 / (self.queries_stream.avg_intensity * self.W_1_inf) * (sum1 + sum2 + sum3)[0][0]
 
     def avg_wait_time_2(self, stationary_probas):
+        """
+        Average waiting time for non-priority queries that became priority
+
+        :param stationary_probas:
+        :return:
+        """
         revSe = r_multiply_e(la.inv(-self.serv_stream.repres_matr))
         b1 = 1 / self.serv_stream.avg_intensity
 
