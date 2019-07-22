@@ -84,7 +84,7 @@ class Bmmap302PhPh:
         self.test_matrGamma = np.array([[-10., 10.],
                                         [0., -10.]])
 ```
-To launch this single experiment you should modify `twopriorities_qs.py`:
+To launch this single experiment you should modify `two_priorities_qs.py`:
 1. replace any imported as test with `import experiments_data.<file_name> as test`
 2. under `if __name__ == '__main__':` section at the bottom of the file replace
  `test_data = test.Bmmap3PoissonPhPh()` with
