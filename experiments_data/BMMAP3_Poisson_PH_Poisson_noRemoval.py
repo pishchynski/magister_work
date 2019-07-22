@@ -2,6 +2,14 @@ import numpy as np
 
 
 class Bmmap3PoissonPhPoissonNoRemoval:
+    """
+        Experiment with BMMAP queries stream with max group of 3
+        and c_cor = 0
+        with PH serve time
+        and Poisson timer
+        with removal probability = 10 ** (-5)
+    """
+
     def __init__(self):
         # BMMAP
         self.test_matrD_0 = np.array([[-17.2743362832]])

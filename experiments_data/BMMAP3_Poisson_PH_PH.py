@@ -2,6 +2,13 @@ import numpy as np
 
 
 class Bmmap3PoissonPhPh:
+    """
+        Experiment with BMMAP queries stream with max group of 3
+        and c_cor = 0
+        with PH serve time
+        and PH timer
+    """
+
     def __init__(self, matrS_elem=20):
         # BMMAP
         self.test_matrD_0 = np.array([[-17.274336283185839]])

@@ -116,7 +116,7 @@ def calc_ramaswami_matrices(matr_S: np.ndarray, matr_tilde_S: np.ndarray, vect_b
     :param matr_tilde_S: [[0, 0], [S_0, S]] matrix
     :param vect_beta: PH vector
     :param N: number of servers
-    :return:
+    :return: tuple with (L matrices, A matrices, P matrices)
     """
     matr_U = []
     matr_L = []

@@ -150,6 +150,19 @@ class BMMAPStream:
     BMMAP stream class.
     Contains list of transition matrices for each type, stream average intensities, stream average intensity,
     stream batches intensity and correlation coefficient.
+
+    :ivar qs: tuple of coefficients with which matrix D will be divided onto transition matrices
+    :ivar transition_matrices: list of lists of transition matrices for each query type
+    :ivar matrD_0: np.array
+    :ivar dim_: int representing dimension + 1 ($\bar{W}$)
+    :ivar dim: int representing dimension ($W$)
+    :ivar matrD_0_: np.array representing $D(1)$
+    :ivar theta: np.array - $\theta$ vector
+    :ivar avg_intensity_t: list of floats with queries of each type intensities
+    :ivar avg_intensity: float - average queries intensity
+    :ivar batch_intensity_t: list of floats with queries groups of each type intensities
+    :ivar c_var: float - variation coefficient
+    :ivar c_cor: float - correlation coefficient
     """
 
     def print_characteristics(self, matrix_name='D', file=sys.stdout):
@@ -192,9 +205,10 @@ class BMMAPStream:
 
         :param matrD_0: np.array or list with matrix D_0
         :param matrD: np.array or list with matrix that will be used to generate other matrices
-        :param q: float coefficient for generating other matrices
+        :param qs: tuple of float coefficients for generating other transition matrices
         :param ns: (int, int) numbers of matrices to be generated (excluding matrix D_0)
         :param t_num: int number of queries types
+
         """
 
         self.qs = qs
